@@ -24,7 +24,7 @@ h1{font-family:var(--f-disp);font-weight:800;font-size:clamp(36px,8vw,60px);lett
 .lede{margin:8px 0 0;color:var(--dim);max-width:36em}
 .game{display:grid;gap:12px;min-width:0;align-content:start}
 .screen{background:#000;border:3px solid var(--line);line-height:0}
-canvas#game{display:block;width:100%;aspect-ratio:512/480;image-rendering:pixelated;touch-action:none;outline:none}
+canvas#game{display:block;width:100%;aspect-ratio:512/480; /* 実際の比率はJSが設定 */image-rendering:pixelated;touch-action:none;outline:none}
 canvas#game:focus-visible{box-shadow:0 0 0 3px var(--gold)}
 .bar{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font:inherit;font-size:14px;color:var(--paper);background:var(--panel);border:1px solid var(--line);padding:4px 14px;cursor:pointer}
@@ -61,7 +61,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
     .wrap{gap:12px}
     header,.rotate{display:none}
     .screen{height:100svh;display:grid;place-items:center;background:#000;border:0}
-    canvas#game{height:100%;width:auto;max-width:100%}
+    canvas#game{height:100svh;width:auto;max-width:100%}
     .bar{padding:0 12px}
   }
 }
@@ -105,11 +105,16 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         </div>
       </div>
     </div>
-    <p class="rotate">スマホは横向きにすると遊びやすいです。左半分をなぞって移動、右の「射」で攻撃。</p>
+    <p class="rotate">スマホは横向きにすると遊びやすいです。左半分をなぞって移動、右の「射」で攻撃。画面は自動で「スマホ 16×15マス」になります(下の「画面」で切替可)。</p>
     <div class="bar">
       <button class="btn" id="btnPause" type="button">一時停止 (P)</button>
       <button class="btn" id="btnSound" type="button">音 ON (M)</button>
       <button class="btn" id="btnFull" type="button">全画面 (F)</button>
+      <label class="btn" for="selView">画面
+        <select id="selView" aria-label="画面の広さ">
+          <option value="0">PC 32×30マス</option><option value="1">スマホ 16×15マス(大きいドット)</option>
+        </select>
+      </label>
       <label class="btn" for="selStage">開始面
         <select id="selStage" aria-label="開始する面">
           <option value="0">一 博多湾</option><option value="1">二 石築地</option><option value="2">三 ボーナス</option>
@@ -144,6 +149,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
         <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音 / F 全画面</dd>
         <dt>スマホ</dt><dd>横向き推奨。画面の左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え</dd>
+        <dt>画面</dt><dd>PCは32×30マス、スマホは16×15マス(ドットが大きい)。タッチ端末では自動で切替。「画面」の選択で変えられ、遊んでいる途中なら次の面から</dd>
       </dl>
     </section>
     <section>
@@ -180,9 +186,23 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
 <script>
 (()=>{
 'use strict';
-const W=512,H=480,T=16,COLS=32,SW=256,SH=240; /* 画面は32×30マス。タイトル等の場面絵は256×240を4倍で描く */
+let W=512,H=480,COLS=32; /* 画面: PCは32×30マス、スマホは16×15マス(ドットが2倍の大きさ) */
+const T=16,SW=256,SH=240; /* タイトル等の場面絵は256×240で描き、画面幅に合わせて拡大 */
+const WIDE=()=>W>256;
 const cv=document.getElementById('game');
 const main=cv.getContext('2d');
+let pendingView=null;
+function setView(narrow){
+  W=narrow?256:512;H=narrow?240:480;COLS=narrow?16:32;
+  cv.width=W*2;cv.height=H*2;cv.style.aspectRatio=W+'/'+H;
+  const sel=document.getElementById('selView');if(sel)sel.value=narrow?'1':'0';
+  try{localStorage.setItem('genko-view',narrow?'1':'0');}catch(e){}
+}
+{
+  let pref=null;try{pref=localStorage.getItem('genko-view');}catch(e){}
+  const coarse=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||(typeof innerWidth==='number'&&innerWidth<700);
+  setView(pref===null?coarse:pref==='1');
+}
 let g=main;
 const FONT="'DotGothic16','Hiragino Kaku Gothic ProN','Yu Gothic','MS Gothic',monospace";
 const K='#1a1410',PAPER='#efe4cc',RED='#d6402a',GOLD='#e8b83a',INDIGO='#2f4a9a';
@@ -409,7 +429,8 @@ function mkFolk(x,y){return{x,y,f:0,anim:0,face:'d',vx:0,vy:0,tt:30+Math.random(
 
 function mkBoss(k){const m=k==='marco'?14:24;return{k,x:W/2,y:84,hp:m,max:m,asleep:true,face:'d',f:0,anim:0,st:0,tt:0,cd:150,inv:0,tr:0,flash:0,atk:'',ang:0,slide:0,sx:0,sy:0,dead:false,n:0,aim:60,sum:300,lanes:null};}
 function buildStage(n){
-  const S=STAGES[n],rows=S.len/T,rnd=mulberry(1274+n*131);
+  const S=STAGES[n],len=S.kind==='defense'?H:Math.round(S.len*(WIDE()?1:.6)/T)*T,rows=len/T,rnd=mulberry(1274+n*131);
+  const nE=WIDE()?S.enemies:Math.ceil(S.enemies*.6);
   const tiles=new Uint8Array(rows*COLS);
   const get=(c,r)=>(c<0||c>=COLS||r<0||r>=rows)?1:tiles[r*COLS+c];
   const okCell=(c,r)=>{for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(get(c+dx,r+dy)!==0)return false;return true;};
@@ -447,10 +468,10 @@ function buildStage(n){
   }
   if(S.kind==='bonus'){const p=pick(rows-13,rows-10);items.push({t:'horse',x:p.x,y:p.y,a:0});}
   const enemies=[];
-  for(let i=0;i<S.enemies;i++){const p=pick(8,rows-14);enemies.push(mkEnemy(wpick(S.mix,rnd),p.x,p.y,true));}
+  for(let i=0;i<nE;i++){const p=pick(8,rows-14);enemies.push(mkEnemy(wpick(S.mix,rnd),p.x,p.y,true));}
   const folk=[];
-  if(S.kind==='defense'){const fr=Math.floor(rows*.6);for(let i=0;i<10;i++){let p=pick(fr,rows-1);for(let k=0;k<20&&Math.abs(p.x-W/2)<40&&p.y>H*.58;k++)p=pick(fr,rows-1);folk.push(mkFolk(p.x,p.y));}}
-  return{S,tiles,rows,worldH:S.len,items,enemies,folk,arrows:[],earrows:[],bombs:[],fx:[],parts:[],cam:S.len-H,boss:S.boss?mkBoss(S.boss):null,stamp:[],banner:null,rice:0,need:S.rice,flagOn:S.kind==='bonus',spawnT:S.kind==='defense'?90:200,wind:0,shake:0,msg:'',msgT:0,flagMsgT:0,time:S.time||null,guard:5,folkT:0,wave:0,surMsg:false,bonusLife:false,swings:[],cryT:0};
+  if(S.kind==='defense'){const fr=Math.floor(rows*.6);for(let i=0;i<(WIDE()?10:6);i++){let p=pick(fr,rows-1);for(let k=0;k<20&&Math.abs(p.x-W/2)<40&&p.y>H*.58;k++)p=pick(fr,rows-1);folk.push(mkFolk(p.x,p.y));}}
+  return{S,tiles,rows,worldH:len,items,enemies,folk,arrows:[],earrows:[],bombs:[],fx:[],parts:[],cam:S.len-H,boss:S.boss?mkBoss(S.boss):null,stamp:[],banner:null,rice:0,need:S.rice,flagOn:S.kind==='bonus',spawnT:S.kind==='defense'?90:200,wind:0,shake:0,msg:'',msgT:0,flagMsgT:0,time:S.time||null,guard:5,folkT:0,wave:0,surMsg:false,bonusLife:false,swings:[],cryT:0};
 }
 
 /* ---------- state ---------- */
@@ -469,9 +490,17 @@ function newGame(){
   G={score:0,lives:3,stage:startAt,next:5000,heads:0,naginata:startAt>=4};
   startStage();
 }
+const selView=document.getElementById('selView');
+if(selView)selView.addEventListener('change',()=>{
+  const nar=selView.value==='1';
+  if(mode==='title'||mode==='over'||mode==='ending'){setView(nar);}
+  else{pendingView=nar;if(L)toast('画面の広さは次の面から変わります');}
+  cv.focus();
+});
 const selStage=document.getElementById('selStage');
 if(selStage)selStage.addEventListener('change',()=>{startAt=+selStage.value||0;cv.focus();});
 function startStage(){
+  if(pendingView!==null){setView(pendingView);pendingView=null;}
   const keepBow=(P&&G.stage>0)?P.bowLv:0;
   L=buildStage(G.stage);
   const keepW=(P&&G.stage>0&&G.naginata)?P.weapon:'bow';
@@ -916,14 +945,14 @@ function updFolk(){
     if(P.horse&&P.stall<=0&&Math.abs(P.x-f.x)<10&&Math.abs(P.y-f.y)<10)killFolk(f,true);
   }
   L.folk=L.folk.filter(f=>!f.dead);
-  if(L.folk.length<10&&++L.folkT>200){L.folkT=0;for(let k=0;k<8;k++){const x=20+Math.random()*(W-40);if(!rectBlocked(x,H-14,10,10)){L.folk.push(mkFolk(x,H-14));break;}}}
+  if(L.folk.length<(WIDE()?10:6)&&++L.folkT>200){L.folkT=0;for(let k=0;k<8;k++){const x=20+Math.random()*(W-40);if(!rectBlocked(x,H-14,10,10)){L.folk.push(mkFolk(x,H-14));break;}}}
 }
 function spawnDefense(){
   if(--L.spawnT>0)return;
   const S=L.S,el=S.time-L.time,ph=Math.min(2,Math.floor(el/1800));
-  L.spawnT=(S.spawn-ph*30)+Math.random()*40;
+  L.spawnT=(S.spawn-ph*30)*(WIDE()?1:1.4)+Math.random()*40;
   const awake=L.enemies.filter(e=>!e.dead).length;
-  if(awake>=14+ph*3)return;
+  if(awake>=(WIDE()?14+ph*3:9+ph*2))return;
   let t=wpick(S.mix,Math.random);
   if(ph===0&&t==='rider')t='foot';
   const n=t==='koryo'?3:t==='song'?2+Math.floor(Math.random()*2):1;
@@ -941,9 +970,9 @@ function spawnLogic(){
   if(S0.kind==='defense'){spawnDefense();return;}
   if(--L.spawnT>0)return;
   const S=L.S;
-  L.spawnT=(S.spawn+Math.random()*50)*(L.flagOn?.7:1);
+  L.spawnT=(S.spawn*(WIDE()?1:1.5)+Math.random()*50)*(L.flagOn?.7:1);
   const awake=L.enemies.filter(e=>!e.asleep).length;
-  if(awake>=Math.min(20,9+G.stage*3))return;
+  if(awake>=(WIDE()?Math.min(20,9+G.stage*3):Math.min(11,5+G.stage*2)))return;
   const bottom=Math.random()<.3&&L.cam+H+14<L.worldH-24;
   const y=bottom?L.cam+H+10:L.cam-10;
   if(y<20)return;
@@ -1017,11 +1046,11 @@ function updStamp(){
   L.stamp=L.stamp.filter(s=>!s.dead);
 }
 function startBarrage(b){
-  const cols=12,rowsN=11,cw=W/cols,ch=40,y0=L.cam+22;
+  const cols=WIDE()?12:6,rowsN=WIDE()?11:5,cw=W/cols,ch=40,y0=L.cam+22;
   const pc=Math.max(0,Math.min(cols-1,Math.floor(P.x/cw))),pr=Math.max(0,Math.min(rowsN-1,Math.floor((P.y-y0)/ch)));
   const safe=new Set();
   safe.add(Math.max(0,Math.min(rowsN-1,pr+Math.floor(Math.random()*3)-1))*cols+Math.max(0,Math.min(cols-1,pc+Math.floor(Math.random()*3)-1)));
-  while(safe.size<16)safe.add(Math.floor(Math.random()*cols*rowsN));
+  while(safe.size<(WIDE()?16:4))safe.add(Math.floor(Math.random()*cols*rowsN));
   b.safeCells=[];b.sched=[];b.bt=0;
   for(let r=0;r<rowsN;r++)for(let c=0;c<cols;c++){
     const cx=c*cw+cw/2,cy=y0+r*ch+ch/2;
@@ -1761,7 +1790,7 @@ function drawWorld(){
   for(const p of L.parts)R(p.x,p.y-L.cam,p.s,p.s,p.c);
   if(L.S.theme==='night'){
     const px=Math.round(P.x),py=Math.round(P.y-L.cam),fl=Math.sin(tick/5)*2;
-    const gr=g.createRadialGradient(px,py,16,px,py,104+fl);
+    const gr=g.createRadialGradient(px,py,16,px,py,(WIDE()?104:76)+fl);
     gr.addColorStop(0,'rgba(6,8,22,0)');gr.addColorStop(.55,'rgba(6,8,22,.5)');gr.addColorStop(1,'rgba(6,8,22,.94)');
     g.fillStyle=gr;g.fillRect(0,0,W,H);
     for(const e of L.enemies){
@@ -1897,8 +1926,9 @@ function draw(){
   g.setTransform(2,0,0,2,0,0);
   g.imageSmoothingEnabled=false;
   g.clearRect(0,0,W,H);
-  if(mode==='title'){g.setTransform(4,0,0,4,0,0);drawTitle();g.setTransform(2,0,0,2,0,0);}
-  else if(mode==='ending'){g.setTransform(4,0,0,4,0,0);drawEnding();g.setTransform(2,0,0,2,0,0);}
+  const sc=W/SW*2;
+  if(mode==='title'){g.setTransform(sc,0,0,sc,0,0);drawTitle();g.setTransform(2,0,0,2,0,0);}
+  else if(mode==='ending'){g.setTransform(sc,0,0,sc,0,0);drawEnding();g.setTransform(2,0,0,2,0,0);}
   else if(L){drawWorld();banner();}
   if(paused){
     g.fillStyle='rgba(20,17,15,.82)';g.fillRect(0,0,W,H);
