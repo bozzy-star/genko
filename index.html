@@ -125,8 +125,8 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
       <button class="btn" id="btnFull" type="button">全画面 (F)</button>
       <label class="btn" for="selDiff">難易度
         <select id="selDiff" aria-label="難易度">
-          <option value="0">baby(御家人5)</option><option value="1">easy(御家人4)</option><option value="2" selected>normal(御家人3)</option>
-          <option value="3">hard(御家人3)</option><option value="4">expert(御家人3)</option>
+          <option value="0">baby(ライフ5)</option><option value="1">easy(ライフ4)</option><option value="2" selected>normal(ライフ3)</option>
+          <option value="3">hard(ライフ2)</option><option value="4">expert(ライフ1)</option>
         </select>
       </label>
       <label class="btn" for="selView">画面
@@ -167,15 +167,15 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>射程</dt><dd>弓 20マス / 三矢 10マス / 薙刀 1マス / 弓兵 7マス</dd>
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
         <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音量(5段階、押すごとに下がり、0の次は最大) / F 全画面</dd>
-        <dt>スマホ</dt><dd>画面右上の「全画面」を押して横向きにする。左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え、右上の「II」で一時停止</dd>
-        <dt>難易度</dt><dd>baby / easy / normal / hard / expert。normal がこれまでの調整。baby は御家人5人、easy は4人、normal 以上は3人。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
+        <dt>スマホ</dt><dd>画面右上の「全画面」を押して横向きにする。左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え(「射」を押したまま上へなぞっても持ち替わる)、右上の「II」で一時停止</dd>
+        <dt>難易度</dt><dd>baby / easy / normal / hard / expert。normal がこれまでの調整。ライフ(♥、画面右上)は baby 5 / easy 4 / normal 3 / hard 2 / expert 1 で、尽きると御家人を一人失う。御家人は3人(左上の兜の印)。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
         <dt>画面</dt><dd>PCは32×30マス、スマホは16×15マス(ドットが大きい)。タッチ端末では自動で切替。「画面」の選択で変えられ、遊んでいる途中なら次の面から</dd>
       </dl>
     </section>
     <section>
       <h2>敵</h2>
       <div class="foes">
-        <div class="foe"><canvas width="64" height="64" data-spr="player"></canvas><div><b>あなた(御家人)</b><span>矢は向いている方向へ飛びます。敵・敵の矢・爆発に当たると討死。</span></div></div>
+        <div class="foe"><canvas width="64" height="64" data-spr="player"></canvas><div><b>あなた(御家人)</b><span>矢は向いている方向へ飛びます。敵・敵の矢・爆発に当たるとライフ(♥)が一つ減り、尽きると討死。</span></div></div>
         <div class="foe"><canvas width="64" height="64" data-spr="foot"></canvas><div><b>歩兵</b><span>まっすぐ追ってきます。</span></div></div>
         <div class="foe"><canvas width="64" height="64" data-spr="archer"></canvas><div><b>弓兵</b><span>距離をとって矢を射ます。矢は自分の矢で撃ち落とせます。</span></div></div>
         <div class="foe"><canvas width="64" height="64" data-spr="bomber"></canvas><div><b>てつはう兵</b><span>落下地点に輪が出て、少し遅れて爆発。ほかの敵も巻き込めます。</span></div></div>
@@ -195,6 +195,8 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <li>三矢の弓 … 拾うたびに射る向きが増える(前→後ろ→右→左、最大12本)。射程は約10マス(通常の矢は20マス)。討死で失う</li>
         <li>神風 … 画面内の敵を一掃</li>
         <li>薙刀(第四面から) … Xで弓と持ち替え。射程は短いが、盾持ちも敵の矢も払える</li>
+        <li>追尾の矢 … 十五秒間、矢がいちばん近い敵へ曲がって飛ぶ。重ねて拾うと延びる(最長三十秒)</li>
+        <li>♥ … ライフを一つ回復。ライフが減っているときだけ敵が落とす</li>
         <li>漕ぎ手(第六面) … 拾うほど舟が思いどおりに動き、四人で慣性がなくなる。攻撃を受けると一人失う</li>
         <li>馬 … 速く走れ、体当たりで歩兵・弓兵・てつはう兵・宋兵を蹴散らせる。矢も撃てる。てつはうの爆発で足が止まり、攻撃を受けると馬が消える(自分は無事)。騎馬兵だけは蹴散らせない</li>
       </ul>
@@ -213,11 +215,11 @@ const cv=document.getElementById('game');
 const main=cv.getContext('2d');
 /* 難易度: normal(3)がこれまでの調整。敵の速さ・出現間隔・射撃間隔・大将の体力・守り・夜の発見距離・得点倍率が変わる */
 const DIFFS=[
-  {name:'baby',  lives:5,spd:.8, spawn:1.6,shot:1.5,hp:.6, guard:7,see:48,inv:240,mult:.5},
-  {name:'easy',  lives:4,spd:.9, spawn:1.25,shot:1.2,hp:.8,guard:6,see:56,inv:190,mult:.75},
-  {name:'normal',lives:3,spd:1,  spawn:1,  shot:1,  hp:1,  guard:5,see:64,inv:150,mult:1},
-  {name:'hard',  lives:3,spd:1.12,spawn:.8,shot:.8, hp:1.3,guard:4,see:74,inv:120,mult:1.25},
-  {name:'expert',lives:3,spd:1.25,spawn:.65,shot:.65,hp:1.6,guard:3,see:86,inv:100,mult:1.5}
+  {name:'baby',  lives:3,life:5,spd:.8, spawn:1.6,shot:1.5,hp:.6, guard:7,see:48,inv:240,mult:.5},
+  {name:'easy',  lives:3,life:4,spd:.9, spawn:1.25,shot:1.2,hp:.8,guard:6,see:56,inv:190,mult:.75},
+  {name:'normal',lives:3,life:3,spd:1,  spawn:1,  shot:1,  hp:1,  guard:5,see:64,inv:150,mult:1},
+  {name:'hard',  lives:3,life:2,spd:1.12,spawn:.8,shot:.8, hp:1.3,guard:4,see:74,inv:120,mult:1.25},
+  {name:'expert',lives:3,life:1,spd:1.25,spawn:.65,shot:.65,hp:1.6,guard:3,see:86,inv:100,mult:1.5}
 ];
 let diff=2;
 const D=()=>DIFFS[diff];
@@ -306,6 +308,15 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
   const end=e=>{if(e.pointerId!==id)return;id=null;stick.classList.remove('on');setDir(0,0);};
   zone.addEventListener('pointerup',end);zone.addEventListener('pointercancel',end);
   zone.addEventListener('contextmenu',e=>e.preventDefault());
+  /* 「射」ボタンを押したまま上へなぞると弓と薙刀を持ち替える */
+  const fb=document.querySelector('.tfire');
+  if(fb){
+    let fid=null,fy=0,done=false;
+    fb.addEventListener('pointerdown',e=>{fid=e.pointerId;fy=e.clientY;done=false;});
+    fb.addEventListener('pointermove',e=>{if(e.pointerId!==fid||done)return;if(fy-e.clientY>26){done=true;swapPulse=2;}});
+    const fe=e=>{if(e.pointerId===fid)fid=null;};
+    fb.addEventListener('pointerup',fe);fb.addEventListener('pointercancel',fe);
+  }
 })();
 document.getElementById('btnPause').addEventListener('click',()=>setPause(!paused));
 document.getElementById('btnSound').addEventListener('click',()=>{initAudio();cycleVol();});
@@ -563,7 +574,7 @@ function startStage(){
   const keepBow=(P&&G.stage>0)?P.bowLv:0;
   L=buildStage(G.stage);
   const keepW=(P&&G.stage>0&&G.naginata)?P.weapon:'bow';
-  P={x:W/2,y:L.S.kind==='defense'?H-70:L.worldH-40,dir:'u',f:0,anim:0,fcd:0,inv:0,bowLv:keepBow,horse:false,stall:0,vx:0,vy:0,rowers:0,say:null,weapon:keepW,sw:0,side:1,swHit:null};
+  P={x:W/2,y:L.S.kind==='defense'?H-70:L.worldH-40,dir:'u',f:0,anim:0,fcd:0,inv:0,bowLv:keepBow,horse:false,stall:0,vx:0,vy:0,rowers:0,say:null,weapon:keepW,sw:0,side:1,swHit:null,hp:D().life,homing:0};
   if(rectBlocked(P.x,P.y,10,10)){
     outer:for(let rr=1;rr<8;rr++)for(let dy=-rr;dy<=rr;dy++)for(let dx=-rr;dx<=rr;dx++){
       const x=P.x+dx*T,y=P.y+dy*T;
@@ -659,7 +670,7 @@ function updPlayer(){
   P.f=(P.anim|0)&1;
   if(P.inv>0)P.inv--;
   if(P.fcd>0)P.fcd--;
-  const se=inp.swap&&!psw;psw=inp.swap;
+  const se=(inp.swap&&!psw)||swapPulse===2;psw=inp.swap;if(swapPulse>0)swapPulse--;
   if(se&&G.naginata&&P.sw<=0){P.weapon=P.weapon==='bow'?'naginata':'bow';toast(P.weapon==='bow'?'弓に持ち替えた':'薙刀に持ち替えた');sfx.horse();}
   if(P.sw>0)swingStep();
   else if(inp.fire&&P.fcd<=0){
@@ -667,7 +678,7 @@ function updPlayer(){
     else if(L.arrows.length<(P.bowLv?P.bowLv*9:4))shoot();
   }
 }
-let psw=0;
+let psw=0,swapPulse=0;
 /* 薙刀: 徒歩は右→前、左→前の二段。騎馬は片側だけ(一振りごとに左右が替わる) */
 function swingAng(){
   const t=Math.min(13,14-P.sw);
@@ -695,7 +706,7 @@ function shoot(){
   const use=n?dirs.slice(0,n):[dirs[0]],angs=n?[-.3,0,.3]:[0],life=n?48:94; /* 射程: 通常20マス、三矢10マス */
   for(const d of use)for(const a of angs){
     const c=Math.cos(a),s=Math.sin(a);
-    L.arrows.push({x:P.x+d[0]*8,y:P.y+d[1]*8-2,vx:(d[0]*c-d[1]*s)*sp,vy:(d[0]*s+d[1]*c)*sp,life:life,wk:.8*sp/life});
+    L.arrows.push({x:P.x+d[0]*8,y:P.y+d[1]*8-2,vx:(d[0]*c-d[1]*s)*sp,vy:(d[0]*s+d[1]*c)*sp,life:life,wk:.8*sp/life,hm:P.homing>0});
   }
   P.fcd=n?15:12;sfx.shot();
 }
@@ -708,6 +719,9 @@ function hurt(){
   if(mode!=='play'||P.inv>0)return;
   if(P.horse){loseHorse();return;}
   if(P.rowers>0){P.rowers--;P.inv=70;sfx.neigh();L.shake=8;burst(P.x,P.y,['#bcd6e6',PAPER,'#2f4a9a'],12,2);toast('漕ぎ手がやられた!');return;}
+  /* ライフ: 難易度ぶんの手傷に耐え、尽きると討死 */
+  P.hp--;
+  if(P.hp>0){P.inv=90;sfx.hurt();L.shake=8;burst(P.x,P.y,[RED,PAPER],10,1.8);toast('手傷! あと'+'♥'.repeat(P.hp));return;}
   fall();
 }
 function fall(){
@@ -716,7 +730,7 @@ function fall(){
   burst(P.x,P.y,[RED,PAPER,INDIGO],18,2.2);
 }
 function respawn(){
-  P.inv=D().inv;P.bowLv=0;P.horse=false;P.stall=0;L.earrows=[];L.bombs=[];L.stamp=[];L.guard=D().guard;
+  P.inv=D().inv;P.bowLv=0;P.horse=false;P.stall=0;P.hp=D().life;P.homing=0;L.earrows=[];L.bombs=[];L.stamp=[];L.guard=D().guard;
   if(L.boss){L.boss.st=0;L.boss.cd=100;}
   for(const e of L.enemies){if(!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<70){e.dead=true;burst(e.x,e.y,['#efe4cc',K],6,1.4);}}
   L.enemies=L.enemies.filter(e=>!e.dead);
@@ -753,7 +767,7 @@ function killFolk(f,byPlayer){
 }
 function breach(){
   toast('町が破られた!');
-  P.inv=0;fall();
+  P.inv=0;P.hp=0;fall();
 }
 function kill(e,drops,shout){
   if(e.dead)return;
@@ -768,10 +782,23 @@ function kill(e,drops,shout){
     if(e.t==='rider'&&r<.4)L.items.push({t:L.S.theme==='sea'?'rower':'horse',x:e.x,y:e.y,a:0});
     else if(r<.08)L.items.push({t:'bow',x:e.x,y:e.y,a:0});
     else if(r<.115)L.items.push({t:'wind',x:e.x,y:e.y,a:0});
+    else if(r<.165)L.items.push({t:'homing',x:e.x,y:e.y,a:0});
+    else if(r<.225&&P.hp<D().life)L.items.push({t:'heart',x:e.x,y:e.y,a:0});
   }
 }
 function updArrows(){
   for(const a of L.arrows){
+    if(a.hm){
+      /* 追尾: いちばん近い敵(か大将)へ、毎フレーム少しずつ向きを曲げる */
+      let tg=null,bd=140;
+      for(const e of L.enemies){if(e.dead||e.asleep||e.sur)continue;const d=Math.hypot(e.x-a.x,e.y-a.y);if(d<bd){bd=d;tg=e;}}
+      if(L.boss&&!L.boss.dead&&!L.boss.asleep){const d=Math.hypot(L.boss.x-a.x,L.boss.y-a.y);if(d<bd){bd=d;tg=L.boss;}}
+      if(tg){
+        const sp=Math.hypot(a.vx,a.vy),ca=Math.atan2(a.vy,a.vx),ta=Math.atan2(tg.y-a.y,tg.x-a.x);
+        let da=Math.atan2(Math.sin(ta-ca),Math.cos(ta-ca));da=Math.max(-.14,Math.min(.14,da));
+        a.vx=Math.cos(ca+da)*sp;a.vy=Math.sin(ca+da)*sp;
+      }
+    }
     if(a.wk){a.vx+=GALE.x*a.wk;a.vy+=GALE.y*a.wk;}
     a.x+=a.vx;a.y+=a.vy;a.life--;
     if(a.life<=0||rectBlocked(a.x,a.y,2,2,true)){
@@ -842,7 +869,7 @@ const ROWMSG=['漕ぎ手が加わった! 舟が曲がりやすい','漕ぎ手 �
 const BOWMSG=['三矢の弓! 前へ三本','後ろにも三本!','右にも三本!','左にも! 前後左右 十二本!'];
 function pickup(it){
   if(it.t==='wind')say('かみかぜじゃー',2);
-  else if(it.t==='bow'||it.t==='horse'||it.t==='rower')say('一所懸命',2);
+  else if(it.t==='bow'||it.t==='horse'||it.t==='rower'||it.t==='homing')say('一所懸命',2);
   if(it.t==='rice'){
     L.rice++;addScore(100);sfx.rice();
     if(L.rice>=L.need&&L.S.kind!=='bonus'){L.flagOn=true;toast('米俵が揃った! 本陣の旗へ!');sfx.power();}
@@ -860,6 +887,8 @@ function pickup(it){
   else if(it.t==='rower'){
     if(P.rowers>=4)addScore(300);else{P.rowers++;toast(ROWMSG[P.rowers-1]);}
   }
+  else if(it.t==='homing'){P.homing=Math.min(1800,P.homing+900);toast('追尾の矢! 近い敵へ曲がって飛ぶ(十五秒)');}
+  else if(it.t==='heart'){if(P.hp<D().life){P.hp++;toast('ライフ回復 '+'♥'.repeat(P.hp));}else addScore(200);sfx.rice();}
 }
 function updItems(){
   for(const it of L.items){
@@ -1201,6 +1230,7 @@ function update(){
   if(mode==='play'){
     GALE=L.S.theme==='sea'?gale():{x:0,y:0,s:0,a:0};
     if(P.say&&--P.say.t<=0)P.say=null;
+    if(P.homing>0)P.homing--;
     updPlayer();updArrows();updEnemies();updBombs();updEArrows();updItems();updBoss();updStamp();updFx();
     spawnLogic();camera();
     for(const s of L.swings)s.t++;
@@ -1332,6 +1362,11 @@ function drawItem(it){
       for(let i=-1;i<=1;i++){R(x-5,y+i*4,10,1,'#7a4a2a');R(x-6,y+i*4-1,2,3,RED);R(x+4,y+i*4-1,2,3,'#6b7685');}
     }else if(it.t==='horse'){
       R(x,y-5,4,9,'#7a4a2a');R(x-5,y,6,5,'#7a4a2a');R(x-6,y+2,2,3,'#9a6a3a');R(x,y-6,2,2,'#7a4a2a');R(x-2,y+1,1,1,K);R(x+4,y-5,1,9,K);
+    }else if(it.t==='homing'){
+      R(x-6,y+1,10,1,'#7a4a2a');R(x+4,y,2,3,'#c3cad6');R(x-7,y,2,3,RED);
+      g.strokeStyle=GOLD;g.lineWidth=1;g.beginPath();g.arc(x-1,y-2,4,Math.PI*.9,Math.PI*1.9);g.stroke();
+    }else if(it.t==='heart'){
+      R(x-5,y-4,4,4,RED);R(x+1,y-4,4,4,RED);R(x-6,y-2,12,3,RED);R(x-5,y+1,10,2,RED);R(x-3,y+3,6,2,RED);R(x-1,y+5,2,1,RED);R(x-4,y-3,1,1,'#ffb0b0');
     }else if(it.t==='rower'){
       R(x-2,y-5,4,4,SKIN);R(x-2,y-1,4,5,'#2f4a9a');R(x-7,y+2,14,1,'#8a5a2b');R(x+5,y+1,3,3,'#b07a40');R(x-8,y+1,3,3,'#b07a40');
     }else{
@@ -1462,7 +1497,7 @@ function drawTitle(){
   if((t>>5)&1)otext('いざ、出陣',128,142,16,GOLD,K,'center');
   otext('Enter / クリック / 射ボタン',128,164,8,PAPER,K,'center');
   otext('1〜6キー: その面から始める',128,178,8,PAPER,K,'center');
-  otext('難易度 '+D().name+'  御家人×'+D().lives+(diff!==2?'  得点×'+D().mult:''),128,190,8,diff>=3?RED:diff<=1?'#9ad0a0':GOLD,K,'center');
+  otext('難易度 '+D().name+'  ライフ'+'♥'.repeat(D().life)+(diff!==2?'  得点×'+D().mult:''),128,190,8,diff>=3?RED:diff<=1?'#9ad0a0':GOLD,K,'center');
   text('HI '+String(hi).padStart(6,'0'),250,228,8,K,'right');
 }
 const hh=(a,b)=>hash(a,b)>>>0;
@@ -1914,35 +1949,46 @@ function drawWorld(){
 function drawHud(){
   R(0,0,W,12,'rgba(20,17,15,.8)');
   const def=L.S.kind==='defense',bon=L.S.kind==='bonus';
+  /* 一段目: 御家人(兜の印)・米/守り・首級・残り時間、右端にライフの♥ */
   text('御家人',4,2,8,PAPER);
-  text('×'+G.lives,30,2,8,G.lives<=1?RED:PAPER);
+  const nl=Math.min(G.lives,5);
+  for(let i=0;i<nl;i++){const x=30+i*8;R(x,3,6,6,K);R(x+1,4,4,2,GOLD);R(x+1,6,4,2,'#2f4a9a');R(x,3,1,2,GOLD);R(x+5,3,1,2,GOLD);}
+  if(G.lives>5)text('+'+(G.lives-5),30+nl*8,2,8,PAPER);
   if(def){
-    text('守り',56,2,8,PAPER);
-    for(let i=0;i<D().guard;i++){R(74+i*7,3,6,6,K);if(i<L.guard)R(75+i*7,4,4,4,i<2&&L.guard<=2&&((tick>>3)&1)?RED:GOLD);}
+    text('守り',72,2,8,PAPER);
+    for(let i=0;i<D().guard;i++){R(90+i*7,3,6,6,K);if(i<L.guard)R(91+i*7,4,4,4,i<2&&L.guard<=2&&((tick>>3)&1)?RED:GOLD);}
   }else{
-    text('米',56,2,8,PAPER);
-    text(L.rice+'/'+L.need,66,2,8,L.rice>=L.need?GOLD:PAPER);
+    text('米',72,2,8,PAPER);
+    text(L.rice+'/'+L.need,82,2,8,L.rice>=L.need?GOLD:PAPER);
   }
-  text('首級',112,2,8,PAPER);
-  text(String(G.heads),130,2,8,GOLD);
-  if(L.time!==null){const sec=Math.ceil(L.time/60);text('残'+sec,164,2,8,sec<=10&&((tick>>3)&1)?RED:PAPER);}
-  text(String(G.score).padStart(6,'0'),W-4,2,8,PAPER,'right');
-  const seaH=L.S.theme==='sea',st=P.horse||P.bowLv>0||L.flagOn||seaH||G.naginata;
-  if(st){
-    R(0,12,W,10,'rgba(20,17,15,.55)');
+  text('首級',124,2,8,PAPER);
+  text(String(G.heads),142,2,8,GOLD);
+  if(L.time!==null){const sec=Math.ceil(L.time/60);text('残'+sec,170,2,8,sec<=10&&((tick>>3)&1)?RED:PAPER);}
+  else if(L.flagOn&&!bon&&((tick>>4)&1))text(L.boss&&!L.boss.dead?'大将!':'本陣↑',170,2,8,GOLD);
+  const mx=D().life;
+  for(let i=0;i<mx;i++){
+    const x=W-4-(mx-i)*9,y=2,on=i<P.hp,c=on?((P.hp===1&&((tick>>3)&1))?'#ff8080':RED):'#4a3a3a';
+    R(x,y+1,3,2,c);R(x+4,y+1,3,2,c);R(x,y+3,7,2,c);R(x+1,y+5,5,1,c);R(x+2,y+6,3,1,c);R(x+3,y+7,1,1,c);
+    if(on)R(x+1,y+2,1,1,'#ffb0b0');
+  }
+  /* 二段目: 装備と風、右端に得点 */
+  const seaH=L.S.theme==='sea',st=true;
+  R(0,12,W,10,'rgba(20,17,15,.55)');
+  {
     let hx=4;
     if(P.horse){text('馬',hx,13,8,P.stall>0&&((tick>>3)&1)?RED:GOLD);hx+=12;}
     if(G.naginata){text(P.weapon==='bow'?'弓':'薙刀',hx,13,8,GOLD);hx+=P.weapon==='bow'?12:20;}
     if(seaH){text('漕ぎ手×'+P.rowers,hx,13,8,P.rowers?GOLD:PAPER);hx+=48;}
     if(P.bowLv>0){text('矢×'+P.bowLv*3,hx,13,8,GOLD);hx+=32;}
-    if(L.flagOn&&!bon&&((tick>>4)&1))text(L.boss&&!L.boss.dead?'大将を倒せ!':'本陣へ↑',W/2-28,13,8,GOLD);
+    if(P.homing>0){text('追尾',hx,13,8,P.homing<180&&((tick>>3)&1)?RED:GOLD);hx+=20;}
     if(seaH){
       const lv=GALE.s<.35?'弱':GALE.s<.7?'中':'強';
-      text('風'+lv,W-64,13,8,PAPER);
-      const cx=W-30,cy=17,gx=Math.cos(GALE.a),gy=Math.sin(GALE.a),ln=2+4*GALE.s,hx=cx+gx*ln,hy=cy+gy*ln;
-      g.strokeStyle=PAPER;g.lineWidth=1.5;g.beginPath();g.moveTo(cx-gx*ln,cy-gy*ln);g.lineTo(hx,hy);
-      g.moveTo(hx,hy);g.lineTo(hx-gx*3-gy*2,hy-gy*3+gx*2);g.moveTo(hx,hy);g.lineTo(hx-gx*3+gy*2,hy-gy*3-gx*2);g.stroke();
+      text('風'+lv,hx,13,8,PAPER);
+      const cx=hx+24,cy=17,gx=Math.cos(GALE.a),gy=Math.sin(GALE.a),ln=2+4*GALE.s,ax=cx+gx*ln,ay=cy+gy*ln;
+      g.strokeStyle=PAPER;g.lineWidth=1.5;g.beginPath();g.moveTo(cx-gx*ln,cy-gy*ln);g.lineTo(ax,ay);
+      g.moveTo(ax,ay);g.lineTo(ax-gx*3-gy*2,ay-gy*3+gx*2);g.moveTo(ax,ay);g.lineTo(ax-gx*3+gy*2,ay-gy*3-gx*2);g.stroke();
     }
+    text(String(G.score).padStart(6,'0'),W-4,13,8,PAPER,'right');
   }
   const bb=L.boss;
   if(bb&&!bb.asleep&&!bb.dead){
