@@ -121,7 +121,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
     <p class="rotate">スマホは、画面右上の「全画面」を押してから横向きにすると大きく遊べます。左半分をなぞって移動、右下の「射」で攻撃。画面は自動で「スマホ 16×15マス」になります(下の「画面」で切替可)。</p>
     <div class="bar">
       <button class="btn" id="btnPause" type="button">一時停止 (P)</button>
-      <button class="btn" id="btnSound" type="button">音 ON (M)</button>
+      <button class="btn" id="btnSound" type="button" aria-label="音量">音量 ■■■■ (M)</button>
       <button class="btn" id="btnFull" type="button">全画面 (F)</button>
       <label class="btn" for="selDiff">難易度
         <select id="selDiff" aria-label="難易度">
@@ -166,7 +166,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>持ち替え</dt><dd>X / Shift(第四面で薙刀を得てから)</dd>
         <dt>射程</dt><dd>弓 20マス / 三矢 10マス / 薙刀 1マス / 弓兵 7マス</dd>
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
-        <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音 / F 全画面</dd>
+        <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音量(5段階、押すごとに下がり、0の次は最大) / F 全画面</dd>
         <dt>スマホ</dt><dd>画面右上の「全画面」を押して横向きにする。左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え、右上の「II」で一時停止</dd>
         <dt>難易度</dt><dd>baby / easy / normal / hard / expert。normal がこれまでの調整。baby は御家人5人、easy は4人、normal 以上は3人。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
         <dt>画面</dt><dd>PCは32×30マス、スマホは16×15マス(ドットが大きい)。タッチ端末では自動で切替。「画面」の選択で変えられ、遊んでいる途中なら次の面から</dd>
@@ -261,7 +261,7 @@ addEventListener('keydown',e=>{
   if(e.code==='Enter'){pressStart();e.preventDefault();}
   if(mode==='title'&&/^Digit[1-6]$/.test(e.code)){startAt=+e.code.slice(5)-1;if(selStage)selStage.value=String(startAt);pressStart();e.preventDefault();}
   if(!e.repeat&&(e.code==='KeyP'||e.code==='Escape'))setPause(!paused);
-  if(!e.repeat&&e.code==='KeyM')setMute(!muted);
+  if(!e.repeat&&e.code==='KeyM')cycleVol();
   if(!e.repeat&&e.code==='KeyF')toggleFull();
 });
 addEventListener('keyup',e=>{const a=KMAP[e.code];if(a){kb[a]=0;recalc();e.preventDefault();}});
@@ -308,7 +308,7 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
   zone.addEventListener('contextmenu',e=>e.preventDefault());
 })();
 document.getElementById('btnPause').addEventListener('click',()=>setPause(!paused));
-document.getElementById('btnSound').addEventListener('click',()=>{initAudio();setMute(!muted);});
+document.getElementById('btnSound').addEventListener('click',()=>{initAudio();cycleVol();});
 /* 全画面: 本物の全画面(Android等)を試し、効かない端末(iPhone)でも画面いっぱいに固定表示する */
 function toggleFull(){
   const sc=document.querySelector('.screen'),on=!document.body.classList.contains('play');
@@ -334,21 +334,28 @@ document.getElementById('btnFull').addEventListener('click',toggleFull);
  const bp2=document.getElementById('btnPause2');if(bp2)bp2.addEventListener('click',e=>{e.preventDefault();setPause(!paused);});}
 
 /* ---------- audio ---------- */
-let AC=null,master=null,muted=false,nt=0,bs=0;
+/* 音量: 5段階(0=無音, 4=最大=従来の音量)。Mキーか音量ボタンで 4→3→2→1→0→4 と巡る */
+const VOLS=[0,.055,.1,.155,.22];
+let vol=4;try{const v=localStorage.getItem('genko-vol');if(v!==null&&VOLS[+v]!==undefined)vol=+v;}catch(e){}
+let AC=null,master=null,muted=vol===0,nt=0,bs=0;
 function initAudio(){
   if(AC)return;
   try{
     AC=new (window.AudioContext||window.webkitAudioContext)();
-    master=AC.createGain();master.gain.value=muted?0:.22;master.connect(AC.destination);
+    master=AC.createGain();master.gain.value=VOLS[vol];master.connect(AC.destination);
     nt=AC.currentTime+.1;
     setInterval(bgmTick,90);
   }catch(e){AC=null;}
 }
-function setMute(v){
-  muted=v;
-  if(master)master.gain.value=v?0:.22;
-  document.getElementById('btnSound').textContent=v?'音 OFF (M)':'音 ON (M)';
+function setVol(v){
+  vol=Math.max(0,Math.min(4,v));muted=vol===0;
+  if(master)master.gain.value=VOLS[vol];
+  try{localStorage.setItem('genko-vol',String(vol));}catch(e){}
+  document.getElementById('btnSound').textContent='音量 '+('■'.repeat(vol)+'□'.repeat(4-vol))+' (M)';
 }
+function cycleVol(){setVol(vol===0?4:vol-1);}
+function setMute(v){setVol(v?0:4);}
+setVol(vol);
 function tone(f,d,type,slide,vol,delay){
   if(!AC||muted)return;
   const t=AC.currentTime+(delay||0);
@@ -1995,7 +2002,7 @@ function draw(){
       ['攻撃','Z / Space(押しっぱなし可)'],
       ['','弓は矢を放つ 薙刀は撫で斬り'],
       ['持ち替え','X / Shift(薙刀を得てから)'],
-      ['再開','P / Esc'],['音','M']
+      ['再開','P / Esc'],['音量','M (5段階)']
     ];
     rows.forEach((rw,i)=>{text(rw[0],24,64+i*12,8,GOLD);text(rw[1],80,64+i*12,8,PAPER);});
     text('いまの装備',128,144,8,GOLD,'center');
