@@ -51,6 +51,14 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
   .stick.on{display:block}
   .knob{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(239,228,204,.7);box-shadow:0 0 0 2px rgba(20,17,15,.4)}
   .tbtns{position:absolute;right:10px;bottom:10px;display:flex;align-items:flex-end;gap:12px}
+  .tops{position:absolute;right:8px;top:8px;display:flex;gap:8px}
+  .tfull,.tpause{width:auto;height:34px;padding:0 12px;border-radius:17px;font-size:14px}
+  /* 全画面モード: 画面を端末いっぱいに固定し、ほかを隠す */
+  body.play{overflow:hidden}
+  body.play .screen{position:fixed;inset:0;z-index:50;height:100dvh;width:100vw;display:grid;place-items:center;background:#000;border:0}
+  body.play header,body.play .bar,body.play .help,body.play .rotate{display:none}
+  @media (orientation:landscape){body.play canvas#game{height:100dvh;width:auto;max-width:100vw}}
+  @media (orientation:portrait){body.play canvas#game{width:100vw;height:auto;max-height:100dvh}}
   .tb{pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;font:inherit;color:var(--paper);border-radius:50%;border:2px solid rgba(239,228,204,.6);background:rgba(20,17,15,.35)}
   .tswap{width:56px;height:56px;font-size:18px;margin-bottom:6px}
   .tfire{width:96px;height:96px;font-size:30px;background:rgba(90,31,22,.6);border-color:var(--vermilion)}
@@ -64,6 +72,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
     canvas#game{height:100svh;width:auto;max-width:100%}
     .bar{padding:0 12px}
   }
+  .rotate{display:block}
 }
 .help{min-width:0;display:grid;gap:18px;align-content:start}
 .help h2{font-family:var(--f-disp);font-weight:800;font-size:20px;letter-spacing:.08em;margin:0 0 6px;color:var(--gold)}
@@ -99,13 +108,17 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
       <canvas id="game" width="1024" height="960" tabindex="0" aria-label="元寇のゲーム画面"></canvas>
       <div class="touch" aria-hidden="true">
         <div class="zone" id="zone"><div class="stick" id="stick"><div class="knob" id="knob"></div></div></div>
+        <div class="tops">
+          <button type="button" class="tb tfull" id="btnPlay" aria-label="全画面で遊ぶ">全画面</button>
+          <button type="button" class="tb tpause" id="btnPause2" aria-label="一時停止">II</button>
+        </div>
         <div class="tbtns">
           <button type="button" data-k="swap" class="tb tswap" aria-label="武器を持ち替える">替</button>
           <button type="button" data-k="fire" class="tb tfire" aria-label="攻撃">射</button>
         </div>
       </div>
     </div>
-    <p class="rotate">スマホは横向きにすると遊びやすいです。左半分をなぞって移動、右の「射」で攻撃。画面は自動で「スマホ 16×15マス」になります(下の「画面」で切替可)。</p>
+    <p class="rotate">スマホは、画面右上の「全画面」を押してから横向きにすると大きく遊べます。左半分をなぞって移動、右下の「射」で攻撃。画面は自動で「スマホ 16×15マス」になります(下の「画面」で切替可)。</p>
     <div class="bar">
       <button class="btn" id="btnPause" type="button">一時停止 (P)</button>
       <button class="btn" id="btnSound" type="button">音 ON (M)</button>
@@ -154,7 +167,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>射程</dt><dd>弓 20マス / 三矢 10マス / 薙刀 1マス / 弓兵 7マス</dd>
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
         <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音 / F 全画面</dd>
-        <dt>スマホ</dt><dd>横向き推奨。画面の左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え</dd>
+        <dt>スマホ</dt><dd>画面右上の「全画面」を押して横向きにする。左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え、右上の「II」で一時停止</dd>
         <dt>難易度</dt><dd>baby / easy / normal / hard / expert。normal がこれまでの調整。baby は御家人5人、easy は4人、normal 以上は3人。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
         <dt>画面</dt><dd>PCは32×30マス、スマホは16×15マス(ドットが大きい)。タッチ端末では自動で切替。「画面」の選択で変えられ、遊んでいる途中なら次の面から</dd>
       </dl>
@@ -238,11 +251,13 @@ function hash(a,b){let h=(Math.imul(a,73856093)^Math.imul(b,19349663))>>>0;h^=h>
 /* ---------- input ---------- */
 const inp={up:0,down:0,left:0,right:0,fire:0,swap:0};
 const kb={},tc={};
+let lastDir=null; /* 最後に押した方向。向きはこれを優先する */
+const DIRK={up:'u',down:'d',left:'l',right:'r'};
 function recalc(){for(const k in inp)inp[k]=(kb[k]||tc[k])?1:0;}
 const KMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',KeyZ:'fire',Space:'fire',KeyJ:'fire',KeyX:'swap',ShiftLeft:'swap',ShiftRight:'swap'};
 addEventListener('keydown',e=>{
   const a=KMAP[e.code];
-  if(a){kb[a]=1;recalc();e.preventDefault();initAudio();}
+  if(a){if(DIRK[a]&&!kb[a])lastDir=a;kb[a]=1;recalc();e.preventDefault();initAudio();}
   if(e.code==='Enter'){pressStart();e.preventDefault();}
   if(mode==='title'&&/^Digit[1-6]$/.test(e.code)){startAt=+e.code.slice(5)-1;if(selStage)selStage.value=String(startAt);pressStart();e.preventDefault();}
   if(!e.repeat&&(e.code==='KeyP'||e.code==='Escape'))setPause(!paused);
@@ -271,6 +286,7 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
       const a=Math.atan2(dy,dx),c=Math.cos(a),s=Math.sin(a);
       if(c>.38)tc.right=1;if(c<-.38)tc.left=1;
       if(s>.38)tc.down=1;if(s<-.38)tc.up=1;
+      lastDir=Math.abs(c)>=Math.abs(s)?(c>0?'right':'left'):(s>0?'down':'up');
     }
     recalc();
     const k=Math.min(d,40),a2=Math.atan2(dy,dx);
@@ -293,13 +309,29 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
 })();
 document.getElementById('btnPause').addEventListener('click',()=>setPause(!paused));
 document.getElementById('btnSound').addEventListener('click',()=>{initAudio();setMute(!muted);});
+/* 全画面: 本物の全画面(Android等)を試し、効かない端末(iPhone)でも画面いっぱいに固定表示する */
 function toggleFull(){
-  const sc=document.querySelector('.screen');
-  if(!document.fullscreenElement){if(sc.requestFullscreen)sc.requestFullscreen().catch(()=>{});}
-  else if(document.exitFullscreen)document.exitFullscreen();
+  const sc=document.querySelector('.screen'),on=!document.body.classList.contains('play');
+  document.body.classList.toggle('play',on);
+  const bp=document.getElementById('btnPlay');if(bp)bp.textContent=on?'戻る':'全画面';
+  if(on){
+    if(sc.requestFullscreen){sc.requestFullscreen().then(()=>{try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});}
+    else if(sc.webkitRequestFullscreen)sc.webkitRequestFullscreen();
+    window.scrollTo(0,0);
+  }else{
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+    try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}
+  }
   cv.focus();
 }
+document.addEventListener('fullscreenchange',()=>{
+  if(!document.fullscreenElement&&document.body.classList.contains('play')){
+    document.body.classList.remove('play');const bp=document.getElementById('btnPlay');if(bp)bp.textContent='全画面';
+  }
+});
 document.getElementById('btnFull').addEventListener('click',toggleFull);
+{const bp=document.getElementById('btnPlay');if(bp)bp.addEventListener('click',e=>{e.preventDefault();initAudio();toggleFull();});
+ const bp2=document.getElementById('btnPause2');if(bp2)bp2.addEventListener('click',e=>{e.preventDefault();setPause(!paused);});}
 
 /* ---------- audio ---------- */
 let AC=null,master=null,muted=false,nt=0,bs=0;
@@ -613,7 +645,8 @@ function updPlayer(){
     const k=(dx&&dy)?.7071:1,sp=(P.horse?1.9:1.15)*k;
     if(P.stall<=0&&!sea){moveBox(P,dx*sp,dy*sp,10);P.anim+=P.horse?.2:.16;}
     const pd=[];if(dx)pd.push(dx>0?'r':'l');if(dy)pd.push(dy>0?'d':'u');
-    if(!pd.includes(P.dir))P.dir=pd[pd.length-1];
+    if(lastDir&&inp[lastDir])P.dir=DIRK[lastDir];
+    else if(!pd.includes(P.dir))P.dir=pd[pd.length-1];
   }
   if(P.stall>0)P.stall--;
   P.f=(P.anim|0)&1;
