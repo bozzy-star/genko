@@ -110,6 +110,12 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
       <button class="btn" id="btnPause" type="button">一時停止 (P)</button>
       <button class="btn" id="btnSound" type="button">音 ON (M)</button>
       <button class="btn" id="btnFull" type="button">全画面 (F)</button>
+      <label class="btn" for="selDiff">難易度
+        <select id="selDiff" aria-label="難易度">
+          <option value="0">baby(御家人5)</option><option value="1">easy(御家人4)</option><option value="2" selected>normal(御家人3)</option>
+          <option value="3">hard(御家人3)</option><option value="4">expert(御家人3)</option>
+        </select>
+      </label>
       <label class="btn" for="selView">画面
         <select id="selView" aria-label="画面の広さ">
           <option value="0">PC 32×30マス</option><option value="1">スマホ 16×15マス(大きいドット)</option>
@@ -149,6 +155,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
         <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音 / F 全画面</dd>
         <dt>スマホ</dt><dd>横向き推奨。画面の左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え</dd>
+        <dt>難易度</dt><dd>baby / easy / normal / hard / expert。normal がこれまでの調整。baby は御家人5人、easy は4人、normal 以上は3人。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
         <dt>画面</dt><dd>PCは32×30マス、スマホは16×15マス(ドットが大きい)。タッチ端末では自動で切替。「画面」の選択で変えられ、遊んでいる途中なら次の面から</dd>
       </dl>
     </section>
@@ -191,6 +198,17 @@ const T=16,SW=256,SH=240; /* タイトル等の場面絵は256×240で描き、�
 const WIDE=()=>W>256;
 const cv=document.getElementById('game');
 const main=cv.getContext('2d');
+/* 難易度: normal(3)がこれまでの調整。敵の速さ・出現間隔・射撃間隔・大将の体力・守り・夜の発見距離・得点倍率が変わる */
+const DIFFS=[
+  {name:'baby',  lives:5,spd:.8, spawn:1.6,shot:1.5,hp:.6, guard:7,see:48,inv:240,mult:.5},
+  {name:'easy',  lives:4,spd:.9, spawn:1.25,shot:1.2,hp:.8,guard:6,see:56,inv:190,mult:.75},
+  {name:'normal',lives:3,spd:1,  spawn:1,  shot:1,  hp:1,  guard:5,see:64,inv:150,mult:1},
+  {name:'hard',  lives:3,spd:1.12,spawn:.8,shot:.8, hp:1.3,guard:4,see:74,inv:120,mult:1.25},
+  {name:'expert',lives:3,spd:1.25,spawn:.65,shot:.65,hp:1.6,guard:3,see:86,inv:100,mult:1.5}
+];
+let diff=2;
+const D=()=>DIFFS[diff];
+try{const d=localStorage.getItem('genko-diff');if(d!==null&&DIFFS[+d])diff=+d;}catch(e){}
 let pendingView=null;
 function setView(narrow){
   W=narrow?256:512;H=narrow?240:480;COLS=narrow?16:32;
@@ -427,7 +445,7 @@ function wpick(mix,rn){let s=0;for(const k in mix)s+=mix[k];let r=rn()*s;for(con
 function mkEnemy(t,x,y,asleep){return{t,x,y,asleep,face:'d',f:0,anim:0,cd:50+Math.random()*80,slide:0,sx:0,sy:0,st:0,tt:0,ux:0,uy:0,fx:0,fy:1,sur:false,wx:0,shield:t==='koryo'?20:0,alert:0,sayT:0,pa:Math.random()*6.283,pt:0};}
 function mkFolk(x,y){return{x,y,f:0,anim:0,face:'d',vx:0,vy:0,tt:30+Math.random()*60,panic:0,slide:0,sx:0,sy:0,dead:false};}
 
-function mkBoss(k){const m=k==='marco'?14:24;return{k,x:W/2,y:84,hp:m,max:m,asleep:true,face:'d',f:0,anim:0,st:0,tt:0,cd:150,inv:0,tr:0,flash:0,atk:'',ang:0,slide:0,sx:0,sy:0,dead:false,n:0,aim:60,sum:300,lanes:null};}
+function mkBoss(k){const m=Math.round((k==='marco'?14:24)*D().hp);return{k,x:W/2,y:84,hp:m,max:m,asleep:true,face:'d',f:0,anim:0,st:0,tt:0,cd:150,inv:0,tr:0,flash:0,atk:'',ang:0,slide:0,sx:0,sy:0,dead:false,n:0,aim:60,sum:300,lanes:null};}
 function buildStage(n){
   const S=STAGES[n],len=S.kind==='defense'?H:Math.round(S.len*(WIDE()?1:.6)/T)*T,rows=len/T,rnd=mulberry(1274+n*131);
   const nE=WIDE()?S.enemies:Math.ceil(S.enemies*.6);
@@ -471,7 +489,7 @@ function buildStage(n){
   for(let i=0;i<nE;i++){const p=pick(8,rows-14);enemies.push(mkEnemy(wpick(S.mix,rnd),p.x,p.y,true));}
   const folk=[];
   if(S.kind==='defense'){const fr=Math.floor(rows*.6);for(let i=0;i<(WIDE()?10:6);i++){let p=pick(fr,rows-1);for(let k=0;k<20&&Math.abs(p.x-W/2)<40&&p.y>H*.58;k++)p=pick(fr,rows-1);folk.push(mkFolk(p.x,p.y));}}
-  return{S,tiles,rows,worldH:len,items,enemies,folk,arrows:[],earrows:[],bombs:[],fx:[],parts:[],cam:S.len-H,boss:S.boss?mkBoss(S.boss):null,stamp:[],banner:null,rice:0,need:S.rice,flagOn:S.kind==='bonus',spawnT:S.kind==='defense'?90:200,wind:0,shake:0,msg:'',msgT:0,flagMsgT:0,time:S.time||null,guard:5,folkT:0,wave:0,surMsg:false,bonusLife:false,swings:[],cryT:0};
+  return{S,tiles,rows,worldH:len,items,enemies,folk,arrows:[],earrows:[],bombs:[],fx:[],parts:[],cam:S.len-H,boss:S.boss?mkBoss(S.boss):null,stamp:[],banner:null,rice:0,need:S.rice,flagOn:S.kind==='bonus',spawnT:S.kind==='defense'?90:200,wind:0,shake:0,msg:'',msgT:0,flagMsgT:0,time:S.time||null,guard:D().guard,folkT:0,wave:0,surMsg:false,bonusLife:false,swings:[],cryT:0};
 }
 
 /* ---------- state ---------- */
@@ -487,9 +505,11 @@ function gale(){
 
 let startAt=0;
 function newGame(){
-  G={score:0,lives:3,stage:startAt,next:5000,heads:0,naginata:startAt>=4};
+  G={score:0,lives:D().lives,stage:startAt,next:5000,heads:0,naginata:startAt>=4};
   startStage();
 }
+const selDiff=document.getElementById('selDiff');
+if(selDiff){selDiff.value=String(diff);selDiff.addEventListener('change',()=>{diff=+selDiff.value||0;try{localStorage.setItem('genko-diff',String(diff));}catch(e){}if(L&&mode!=='title')toast('難易度は次のゲームから');cv.focus();});}
 const selView=document.getElementById('selView');
 if(selView)selView.addEventListener('change',()=>{
   const nar=selView.value==='1';
@@ -533,7 +553,7 @@ function say(text,prio){
   if(text==='えい')voice.ei();else if(text==='おう'||text==='おう!')voice.ou();else if(text==='一所懸命')voice.issho();else if(text==='かみかぜじゃー')voice.kami();
 }
 function addScore(n){
-  G.score+=n;
+  G.score+=n>0?Math.round(n*D().mult):n;
   if(G.score>=G.next){G.next+=5000;G.lives++;sfx.power();if(L)toast('御家人が増えた!');}
 }
 function toast(s){L.msg=s;L.msgT=150;}
@@ -656,7 +676,7 @@ function fall(){
   burst(P.x,P.y,[RED,PAPER,INDIGO],18,2.2);
 }
 function respawn(){
-  P.inv=150;P.bowLv=0;P.horse=false;P.stall=0;L.earrows=[];L.bombs=[];L.stamp=[];L.guard=5;
+  P.inv=D().inv;P.bowLv=0;P.horse=false;P.stall=0;L.earrows=[];L.bombs=[];L.stamp=[];L.guard=D().guard;
   if(L.boss){L.boss.st=0;L.boss.cd=100;}
   for(const e of L.enemies){if(!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<70){e.dead=true;burst(e.x,e.y,['#efe4cc',K],6,1.4);}}
   L.enemies=L.enemies.filter(e=>!e.dead);
@@ -833,7 +853,7 @@ function stepEnemy(e){
   if(e.sayT>0)e.sayT--;
   if(L.S.theme==='night'&&!e.sur){
     if(e.alert>0)e.alert--;
-    const seen=d<(P.horse?92:64)&&e.y>L.cam-10&&e.y<L.cam+H+10;
+    const seen=d<D().see*(P.horse?1.45:1)&&e.y>L.cam-10&&e.y<L.cam+H+10;
     if(seen)spot(e);
     if(e.alert<=0){
       /* 巡回 */
@@ -868,11 +888,11 @@ function stepEnemy(e){
   }else if(e.t==='archer'){
     const sp=.42;
     if(d>100){mvx=ux*sp;mvy=uy*sp;}else if(d<62){mvx=-ux*sp;mvy=-uy*sp;}
-    if(--e.cd<=0&&vis&&d<112){e.cd=100+Math.random()*55;L.earrows.push({x:e.x,y:e.y,vx:ux*1.5,vy:uy*1.5,life:75,wk:.8*1.5/75});sfx.shot2();}
+    if(--e.cd<=0&&vis&&d<112){e.cd=(100+Math.random()*55)*D().shot;const as=1.5*(.85+.15*D().spd);L.earrows.push({x:e.x,y:e.y,vx:ux*as,vy:uy*as,life:75,wk:.8*1.5/75});sfx.shot2();}
   }else if(e.t==='bomber'){
     const sp=.4;
     if(d>120){mvx=ux*sp;mvy=uy*sp;}else if(d<80){mvx=-ux*sp;mvy=-uy*sp;}
-    if(--e.cd<=0&&vis&&d<210){e.cd=150+Math.random()*60;L.bombs.push({sx:e.x,sy:e.y,tx:P.x,ty:P.y,t:0,dur:60});sfx.throw();}
+    if(--e.cd<=0&&vis&&d<210){e.cd=(150+Math.random()*60)*D().shot;L.bombs.push({sx:e.x,sy:e.y,tx:P.x,ty:P.y,t:0,dur:60});sfx.throw();}
   }else{
     hb=12;
     if(e.st===0){
@@ -886,8 +906,9 @@ function stepEnemy(e){
     }else if(e.st===2){
       const ok=moveBox(e,e.ux*2.3,e.uy*2.3,hb);
       if(!ok||--e.tt<=0){e.st=3;e.tt=55;}
-    }else if(--e.tt<=0){e.st=0;e.cd=50+Math.random()*60;}
+    }else if(--e.tt<=0){e.st=0;e.cd=(50+Math.random()*60)*D().shot;}
   }
+  mvx*=D().spd;mvy*=D().spd;
   if(mvx||mvy){
     walk(e,mvx,mvy,hb);
     e.face=Math.abs(mvx)>Math.abs(mvy)?(mvx>0?'r':'l'):(mvy>0?'d':'u');
@@ -950,7 +971,7 @@ function updFolk(){
 function spawnDefense(){
   if(--L.spawnT>0)return;
   const S=L.S,el=S.time-L.time,ph=Math.min(2,Math.floor(el/1800));
-  L.spawnT=(S.spawn-ph*30)*(WIDE()?1:1.4)+Math.random()*40;
+  L.spawnT=((S.spawn-ph*30)*(WIDE()?1:1.4)+Math.random()*40)*D().spawn;
   const awake=L.enemies.filter(e=>!e.dead).length;
   if(awake>=(WIDE()?14+ph*3:9+ph*2))return;
   let t=wpick(S.mix,Math.random);
@@ -970,7 +991,7 @@ function spawnLogic(){
   if(S0.kind==='defense'){spawnDefense();return;}
   if(--L.spawnT>0)return;
   const S=L.S;
-  L.spawnT=(S.spawn*(WIDE()?1:1.5)+Math.random()*50)*(L.flagOn?.7:1);
+  L.spawnT=(S.spawn*(WIDE()?1:1.5)+Math.random()*50)*(L.flagOn?.7:1)*D().spawn;
   const awake=L.enemies.filter(e=>!e.asleep).length;
   if(awake>=(WIDE()?Math.min(20,9+G.stage*3):Math.min(11,5+G.stage*2)))return;
   const bottom=Math.random()<.3&&L.cam+H+14<L.worldH-24;
@@ -1111,16 +1132,16 @@ function updBoss(){
     }
     if(b.tt<=0){
       if(b.atk==='group'){startBarrage(b);b.st=3;b.tt=170;}
-      else{b.st=0;b.cd=rage?90:140;}
+      else{b.st=0;b.cd=(rage?90:140)*D().shot;}
     }
   }else{
     b.bt++;
     for(const q of b.sched){
       if(!q.done&&b.bt>=q.t){q.done=true;L.bombs.push({sx:q.x,sy:q.y-150,tx:q.x,ty:q.y,t:0,dur:55,own:true});}
     }
-    if(--b.tt<=0){b.st=0;b.cd=rage?90:140;b.safeCells=null;b.sched=null;}
+    if(--b.tt<=0){b.st=0;b.cd=(rage?90:140)*D().shot;b.safeCells=null;b.sched=null;}
   }
-  if(mvx||mvy)walk(b,mvx,mvy,14);
+  if(mvx||mvy)walk(b,mvx*D().spd,mvy*D().spd,14);
   b.x=Math.max(20,Math.min(W-20,b.x));b.y=Math.max(24,Math.min(H-80,b.y));
   if(mode==='play'&&Math.abs(P.x-b.x)<12&&Math.abs(P.y-b.y)<12){
     if(P.horse&&P.stall<=0){if(b.tr<=0){damageBoss(2);b.tr=40;L.shake=Math.max(L.shake,6);}}
@@ -1401,6 +1422,7 @@ function drawTitle(){
   if((t>>5)&1)otext('いざ、出陣',128,142,16,GOLD,K,'center');
   otext('Enter / クリック / 射ボタン',128,164,8,PAPER,K,'center');
   otext('1〜6キー: その面から始める',128,178,8,PAPER,K,'center');
+  otext('難易度 '+D().name+'  御家人×'+D().lives+(diff!==2?'  得点×'+D().mult:''),128,190,8,diff>=3?RED:diff<=1?'#9ad0a0':GOLD,K,'center');
   text('HI '+String(hi).padStart(6,'0'),250,228,8,K,'right');
 }
 const hh=(a,b)=>hash(a,b)>>>0;
@@ -1856,7 +1878,7 @@ function drawHud(){
   text('×'+G.lives,30,2,8,G.lives<=1?RED:PAPER);
   if(def){
     text('守り',56,2,8,PAPER);
-    for(let i=0;i<5;i++){R(74+i*7,3,6,6,K);if(i<L.guard)R(75+i*7,4,4,4,i<2&&L.guard<=2&&((tick>>3)&1)?RED:GOLD);}
+    for(let i=0;i<D().guard;i++){R(74+i*7,3,6,6,K);if(i<L.guard)R(75+i*7,4,4,4,i<2&&L.guard<=2&&((tick>>3)&1)?RED:GOLD);}
   }else{
     text('米',56,2,8,PAPER);
     text(L.rice+'/'+L.need,66,2,8,L.rice>=L.need?GOLD:PAPER);
