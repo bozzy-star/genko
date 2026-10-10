@@ -46,7 +46,8 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
 .rotate{display:none;margin:0;font-size:14px;color:var(--dim)}
 @media (pointer:coarse){
   .touch{display:block;position:absolute;inset:0;pointer-events:none}
-  .zone{position:absolute;left:0;top:0;width:58%;height:100%;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none}
+  .zone{position:absolute;left:0;top:0;width:58%;height:100%;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .touch,.touch *{-webkit-touch-callout:none}
   .stick{position:absolute;display:none;width:104px;height:104px;margin:-52px 0 0 -52px;border:2px solid rgba(239,228,204,.55);border-radius:50%;background:rgba(20,17,15,.28);pointer-events:none}
   .stick.on{display:block}
   .knob{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(239,228,204,.7);box-shadow:0 0 0 2px rgba(20,17,15,.4)}
@@ -267,20 +268,27 @@ addEventListener('keydown',e=>{
   if(!e.repeat&&e.code==='KeyF')toggleFull();
 });
 addEventListener('keyup',e=>{const a=KMAP[e.code];if(a){kb[a]=0;recalc();e.preventDefault();}});
-addEventListener('blur',()=>{for(const k in kb)kb[k]=0;recalc();if(mode==='play')setPause(true);});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='play')setPause(true);});
+addEventListener('blur',()=>{for(const k in kb)kb[k]=0;releaseAllTouch();if(mode==='play')setPause(true);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseAllTouch();if(mode==='play')setPause(true);}});
+/* タッチボタン: 押している指のIDを覚え、離した・取り消された・ページから外れた、どの場合でも必ず離す */
+const tcIds={};
+function releaseAllTouch(){for(const k in tc)tc[k]=0;for(const k in tcIds)tcIds[k]=null;recalc();}
 document.querySelectorAll('[data-k]').forEach(b=>{
   const k=b.dataset.k;
-  b.addEventListener('pointerdown',e=>{e.preventDefault();tc[k]=1;recalc();initAudio();});
-  for(const ev of ['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,()=>{tc[k]=0;recalc();});
+  b.addEventListener('pointerdown',e=>{e.preventDefault();tcIds[k]=e.pointerId;tc[k]=1;recalc();initAudio();try{b.setPointerCapture(e.pointerId);}catch(err){}});
+  const rel=e=>{if(tcIds[k]===null||tcIds[k]===undefined||e.pointerId===tcIds[k]){tc[k]=0;tcIds[k]=null;recalc();}};
+  for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,rel);
+  b.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')rel(e);});
   b.addEventListener('contextmenu',e=>e.preventDefault());
 });
+addEventListener('pointerup',e=>{for(const k in tcIds)if(tcIds[k]===e.pointerId){tc[k]=0;tcIds[k]=null;recalc();}});
+addEventListener('pointercancel',e=>{for(const k in tcIds)if(tcIds[k]===e.pointerId){tc[k]=0;tcIds[k]=null;recalc();}});
 cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
 /* 仮想スティック: 左側のどこを触っても、その点を中心に指の向きへ動く(8方向) */
 (()=>{
   const zone=document.getElementById('zone'),stick=document.getElementById('stick'),knob=document.getElementById('knob');
   if(!zone||!stick||!knob)return;
-  let id=null,ox=0,oy=0;
+  let id=null,ox=0,oy=0,lastT=0;
   const setDir=(dx,dy)=>{
     const d=Math.hypot(dx,dy);
     tc.up=tc.down=tc.left=tc.right=0;
@@ -294,19 +302,24 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
     const k=Math.min(d,40),a2=Math.atan2(dy,dx);
     knob.style.transform=d>0?'translate('+(Math.cos(a2)*k)+'px,'+(Math.sin(a2)*k)+'px)':'';
   };
+  const stop=()=>{id=null;stick.classList.remove('on');setDir(0,0);};
   zone.addEventListener('pointerdown',e=>{
-    if(id!==null)return;
-    id=e.pointerId;zone.setPointerCapture(id);
+    /* 前の指の離し損ね(1.5秒以上動きなし)は捨てて、新しい指を受け付ける */
+    if(id!==null&&e.pointerId!==id&&performance.now()-lastT<1500)return;
+    id=e.pointerId;lastT=performance.now();
+    try{zone.setPointerCapture(id);}catch(err){}
     const rc=zone.getBoundingClientRect();ox=e.clientX-rc.left;oy=e.clientY-rc.top;
     stick.style.left=ox+'px';stick.style.top=oy+'px';stick.classList.add('on');
     setDir(0,0);initAudio();pressStart();e.preventDefault();
   });
   zone.addEventListener('pointermove',e=>{
-    if(e.pointerId!==id)return;
+    if(e.pointerId!==id)return;lastT=performance.now();
     const rc=zone.getBoundingClientRect();setDir(e.clientX-rc.left-ox,e.clientY-rc.top-oy);e.preventDefault();
   });
-  const end=e=>{if(e.pointerId!==id)return;id=null;stick.classList.remove('on');setDir(0,0);};
-  zone.addEventListener('pointerup',end);zone.addEventListener('pointercancel',end);
+  const end=e=>{if(id===null||e.pointerId!==id)return;stop();};
+  zone.addEventListener('pointerup',end);zone.addEventListener('pointercancel',end);zone.addEventListener('lostpointercapture',end);
+  addEventListener('pointerup',end);addEventListener('pointercancel',end);
+  addEventListener('blur',stop);document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   zone.addEventListener('contextmenu',e=>e.preventDefault());
   /* 「射」ボタンを押したまま上へなぞると弓と薙刀を持ち替える */
   const fb=document.querySelector('.tfire');
