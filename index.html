@@ -40,6 +40,31 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
 .dpad .u{grid-area:u}.dpad .l{grid-area:l}.dpad .r{grid-area:r}.dpad .d{grid-area:d}
 .pad .swap{width:56px;height:56px;border-radius:50%;font-size:18px}
 .pad .fire{width:88px;height:88px;border-radius:50%;font-size:28px;background:#5a1f16;border-color:var(--vermilion)}
+/* スマホ: 画面に半透明の操作を重ねる。左半分が仮想スティック、右下に「射」「替」 */
+.screen{position:relative}
+.touch{display:none}
+.rotate{display:none;margin:0;font-size:14px;color:var(--dim)}
+@media (pointer:coarse){
+  .touch{display:block;position:absolute;inset:0;pointer-events:none}
+  .zone{position:absolute;left:0;top:0;width:58%;height:100%;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none}
+  .stick{position:absolute;display:none;width:104px;height:104px;margin:-52px 0 0 -52px;border:2px solid rgba(239,228,204,.55);border-radius:50%;background:rgba(20,17,15,.28);pointer-events:none}
+  .stick.on{display:block}
+  .knob{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(239,228,204,.7);box-shadow:0 0 0 2px rgba(20,17,15,.4)}
+  .tbtns{position:absolute;right:10px;bottom:10px;display:flex;align-items:flex-end;gap:12px}
+  .tb{pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;font:inherit;color:var(--paper);border-radius:50%;border:2px solid rgba(239,228,204,.6);background:rgba(20,17,15,.35)}
+  .tswap{width:56px;height:56px;font-size:18px;margin-bottom:6px}
+  .tfire{width:96px;height:96px;font-size:30px;background:rgba(90,31,22,.6);border-color:var(--vermilion)}
+  .tb:active{background:rgba(239,228,204,.35)}
+  .rotate{display:block}
+  @media (orientation:landscape){
+    body{padding:0}
+    .wrap{gap:12px}
+    header,.rotate{display:none}
+    .screen{height:100svh;display:grid;place-items:center;background:#000;border:0}
+    canvas#game{height:100%;width:auto;max-width:100%}
+    .bar{padding:0 12px}
+  }
+}
 .help{min-width:0;display:grid;gap:18px;align-content:start}
 .help h2{font-family:var(--f-disp);font-weight:800;font-size:20px;letter-spacing:.08em;margin:0 0 6px;color:var(--gold)}
 .help p,.help li{margin:0;color:var(--paper)}
@@ -70,7 +95,17 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
   </header>
 
   <section class="game" aria-label="ゲーム画面">
-    <div class="screen"><canvas id="game" width="1024" height="960" tabindex="0" aria-label="元寇のゲーム画面"></canvas></div>
+    <div class="screen" id="screen">
+      <canvas id="game" width="1024" height="960" tabindex="0" aria-label="元寇のゲーム画面"></canvas>
+      <div class="touch" aria-hidden="true">
+        <div class="zone" id="zone"><div class="stick" id="stick"><div class="knob" id="knob"></div></div></div>
+        <div class="tbtns">
+          <button type="button" data-k="swap" class="tb tswap" aria-label="武器を持ち替える">替</button>
+          <button type="button" data-k="fire" class="tb tfire" aria-label="攻撃">射</button>
+        </div>
+      </div>
+    </div>
+    <p class="rotate">スマホは横向きにすると遊びやすいです。左半分をなぞって移動、右の「射」で攻撃。</p>
     <div class="bar">
       <button class="btn" id="btnPause" type="button">一時停止 (P)</button>
       <button class="btn" id="btnSound" type="button">音 ON (M)</button>
@@ -81,16 +116,6 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
           <option value="3">四 博多防衛戦</option><option value="4">五 夜討ち</option><option value="5">六 鷹島沖</option>
         </select>
       </label>
-    </div>
-    <div class="pad" aria-label="タッチ操作">
-      <div class="dpad">
-        <button type="button" data-k="up" class="u" aria-label="上">▲</button>
-        <button type="button" data-k="left" class="l" aria-label="左">◀</button>
-        <button type="button" data-k="right" class="r" aria-label="右">▶</button>
-        <button type="button" data-k="down" class="d" aria-label="下">▼</button>
-      </div>
-      <button type="button" data-k="swap" class="swap" aria-label="武器を持ち替える">替</button>
-      <button type="button" data-k="fire" class="fire" aria-label="攻撃">射</button>
     </div>
   </section>
 
@@ -118,7 +143,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>射程</dt><dd>弓 20マス / 三矢 10マス / 薙刀 1マス / 弓兵 7マス</dd>
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
         <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音 / F 全画面</dd>
-        <dt>スマホ</dt><dd>画面下のボタン</dd>
+        <dt>スマホ</dt><dd>横向き推奨。画面の左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え</dd>
       </dl>
     </section>
     <section>
@@ -196,6 +221,38 @@ document.querySelectorAll('[data-k]').forEach(b=>{
   b.addEventListener('contextmenu',e=>e.preventDefault());
 });
 cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
+/* 仮想スティック: 左側のどこを触っても、その点を中心に指の向きへ動く(8方向) */
+(()=>{
+  const zone=document.getElementById('zone'),stick=document.getElementById('stick'),knob=document.getElementById('knob');
+  if(!zone||!stick||!knob)return;
+  let id=null,ox=0,oy=0;
+  const setDir=(dx,dy)=>{
+    const d=Math.hypot(dx,dy);
+    tc.up=tc.down=tc.left=tc.right=0;
+    if(d>10){
+      const a=Math.atan2(dy,dx),c=Math.cos(a),s=Math.sin(a);
+      if(c>.38)tc.right=1;if(c<-.38)tc.left=1;
+      if(s>.38)tc.down=1;if(s<-.38)tc.up=1;
+    }
+    recalc();
+    const k=Math.min(d,40),a2=Math.atan2(dy,dx);
+    knob.style.transform=d>0?'translate('+(Math.cos(a2)*k)+'px,'+(Math.sin(a2)*k)+'px)':'';
+  };
+  zone.addEventListener('pointerdown',e=>{
+    if(id!==null)return;
+    id=e.pointerId;zone.setPointerCapture(id);
+    const rc=zone.getBoundingClientRect();ox=e.clientX-rc.left;oy=e.clientY-rc.top;
+    stick.style.left=ox+'px';stick.style.top=oy+'px';stick.classList.add('on');
+    setDir(0,0);initAudio();pressStart();e.preventDefault();
+  });
+  zone.addEventListener('pointermove',e=>{
+    if(e.pointerId!==id)return;
+    const rc=zone.getBoundingClientRect();setDir(e.clientX-rc.left-ox,e.clientY-rc.top-oy);e.preventDefault();
+  });
+  const end=e=>{if(e.pointerId!==id)return;id=null;stick.classList.remove('on');setDir(0,0);};
+  zone.addEventListener('pointerup',end);zone.addEventListener('pointercancel',end);
+  zone.addEventListener('contextmenu',e=>e.preventDefault());
+})();
 document.getElementById('btnPause').addEventListener('click',()=>setPause(!paused));
 document.getElementById('btnSound').addEventListener('click',()=>{initAudio();setMute(!muted);});
 function toggleFull(){
