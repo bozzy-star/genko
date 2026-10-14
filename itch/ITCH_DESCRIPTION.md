@@ -4,11 +4,11 @@
 元寇 — Genko
 
 ## 短い説明(Short description)
-文永・弘安の役(元寇)をテーマにした、ファミコン『いっき』風の見下ろし縦スクロールアクション。弓と薙刀で蒙古・高麗・宋の兵を退け、米俵を集めて本陣の旗をめざせ。
+文永・弘安の役(元寇)をテーマにした、8ビット風の見下ろし縦スクロールアクション。弓と薙刀で蒙古・高麗・宋の兵を退け、米俵を集めて本陣の旗をめざせ。
 
 ## 本文(Description)
 
-鎌倉武士の御家人となり、二度の蒙古襲来を戦い抜くレトロ風アクションです。HTML一枚、依存ライブラリなし。音も声もすべてコードで合成しています。
+鎌倉武士の御家人となり、二度の蒙古襲来を戦い抜くレトロ風アクションです。ドット絵、チップチューンのBGM、掛け声まで、音も絵もすべてコードで作っています。HTML一枚、依存ライブラリなし。
 
 **遊び方**
 - 面のなかの米俵をすべて集めると、いちばん奥の本陣に旗が立つ。旗に触れれば面クリア
@@ -45,7 +45,7 @@
 ソースコード: https://github.com/bozzy-star/genko
 
 ## English (短め)
-A retro top-down action game in the style of the Famicom classic "Ikki", set during the Mongol invasions of Japan (1274/1281). Collect rice bales, fend off Mongol, Goryeo and Song soldiers with bow and naginata, and reach the banner. Six stages, five difficulty levels, keyboard and touch controls. Single HTML file, no dependencies.
+An 8-bit style top-down action game set during the Mongol invasions of Japan (1274/1281). Collect rice bales, fend off Mongol, Goryeo and Song soldiers with bow and naginata, and reach the banner. Six stages, five difficulty levels, keyboard and touch controls. Single HTML file, no dependencies.
 
 ## itch.io のアップロード設定(おすすめ)
 - Kind of project: **HTML**
