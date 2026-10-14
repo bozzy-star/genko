@@ -19,13 +19,14 @@
 - 移動: 矢印キー / WASD
 - 攻撃: Z / Space(弓は矢を放つ、薙刀は撫で斬り)
 - 持ち替え: X / Shift(第四面で薙刀を得てから)
-- P 一時停止(操作説明) / M 音量 / F 全画面
+- P 一時停止(操作説明) / M 音量(一時停止中は←→でも) / F 全画面
 - タイトルで 1〜6 キー: その面から始める
 
 **操作(スマホ)**
 - 右上の「全画面」を押してから横向きに
 - 画面の左半分をなぞって移動、右下の「射」で攻撃
 - 「替」または「射」を押したまま上へなぞると持ち替え
+- 右上の「II」で一時停止。一時停止中に左半分を左右になぞると音量
 
 **面構成**
 1. 博多湾 — まず矢に慣れる
@@ -49,11 +50,11 @@ An 8-bit style top-down action game set during the Mongol invasions of Japan (12
 
 ## itch.io のアップロード設定(おすすめ)
 - Kind of project: **HTML**
-- アップロード: `genko-itch.zip`(index.html だけが入ったzip)
+- アップロード: `genko-itch.zip`(index.html だけが入ったzip。ボタン列はなく、ゲーム画面だけ)
 - 「This file will be played in the browser」にチェック
 - Embed options:
-  - Viewport dimensions: **1040 × 1060**(PC表示用。画面1024×960+ボタン列)
-  - **Fullscreen button** にチェック
+  - Viewport dimensions: **1024 × 960**(ゲーム画面そのもの。小さくするなら 768 × 720 など同じ比率で)
+  - **Fullscreen button** にチェック(itch が枠の角に全画面ボタンを付ける。ゲーム内の F キー・右上ボタンも使える)
   - **Mobile friendly** にチェック(スマホで全画面で開けるようになる)
   - Orientation: **Landscape**
 - Frame options: 「Automatically start on page load」はオフでよい(タップで開始するため)

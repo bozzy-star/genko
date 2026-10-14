@@ -259,6 +259,7 @@ addEventListener('keydown',e=>{
   if(mode==='title'&&/^Digit[1-6]$/.test(e.code)){startAt=+e.code.slice(5)-1;if(selStage)selStage.value=String(startAt);pressStart();e.preventDefault();}
   if(!e.repeat&&(e.code==='KeyP'||e.code==='Escape'))setPause(!paused);
   if(!e.repeat&&e.code==='KeyM')cycleVol();
+  if(paused&&!e.repeat&&(e.code==='ArrowLeft'||e.code==='ArrowRight'))setVol(vol+(e.code==='ArrowRight'?1:-1));
   if(!e.repeat&&e.code==='KeyF')toggleFull();
 });
 addEventListener('keyup',e=>{const a=KMAP[e.code];if(a){kb[a]=0;recalc();e.preventDefault();}});
@@ -282,7 +283,7 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
 (()=>{
   const zone=document.getElementById('zone'),stick=document.getElementById('stick'),knob=document.getElementById('knob');
   if(!zone||!stick||!knob)return;
-  let id=null,ox=0,oy=0,lastT=0;
+  let id=null,ox=0,oy=0,lastT=0,pausedFlick=false;
   const setDir=(dx,dy)=>{
     const d=Math.hypot(dx,dy);
     tc.up=tc.down=tc.left=tc.right=0;
@@ -291,7 +292,8 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
       if(c>.38)tc.right=1;if(c<-.38)tc.left=1;
       if(s>.38)tc.down=1;if(s<-.38)tc.up=1;
       lastDir=Math.abs(c)>=Math.abs(s)?(c>0?'right':'left'):(s>0?'down':'up');
-    }
+      if(paused&&!pausedFlick&&Math.abs(c)>.7){pausedFlick=true;setVol(vol+(c>0?1:-1));}
+    }else pausedFlick=false;
     recalc();
     const k=Math.min(d,40),a2=Math.atan2(dy,dx);
     knob.style.transform=d>0?'translate('+(Math.cos(a2)*k)+'px,'+(Math.sin(a2)*k)+'px)':'';
@@ -325,8 +327,9 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
     fb.addEventListener('pointerup',fe);fb.addEventListener('pointercancel',fe);
   }
 })();
-document.getElementById('btnPause').addEventListener('click',()=>setPause(!paused));
-document.getElementById('btnSound').addEventListener('click',()=>{initAudio();cycleVol();});
+const $=id=>document.getElementById(id); /* ボタン列がない版(itch)でも動くよう、あれば結ぶ */
+if($('btnPause'))$('btnPause').addEventListener('click',()=>setPause(!paused));
+if($('btnSound'))$('btnSound').addEventListener('click',()=>{initAudio();cycleVol();});
 /* 全画面: 本物の全画面(Android等)を試し、効かない端末(iPhone)でも画面いっぱいに固定表示する */
 function toggleFull(){
   const sc=document.querySelector('.screen'),on=!document.body.classList.contains('play');
@@ -347,7 +350,7 @@ document.addEventListener('fullscreenchange',()=>{
     document.body.classList.remove('play');const bp=document.getElementById('btnPlay');if(bp)bp.textContent='全画面';
   }
 });
-document.getElementById('btnFull').addEventListener('click',toggleFull);
+if($('btnFull'))$('btnFull').addEventListener('click',toggleFull);
 {const bp=document.getElementById('btnPlay');if(bp)bp.addEventListener('click',e=>{e.preventDefault();initAudio();toggleFull();});
  const bp2=document.getElementById('btnPause2');if(bp2)bp2.addEventListener('click',e=>{e.preventDefault();setPause(!paused);});}
 
@@ -369,7 +372,7 @@ function setVol(v){
   vol=Math.max(0,Math.min(4,v));muted=vol===0;
   if(master)master.gain.value=VOLS[vol];
   try{localStorage.setItem('genko-vol',String(vol));}catch(e){}
-  document.getElementById('btnSound').textContent='音量 '+('■'.repeat(vol)+'□'.repeat(4-vol))+' (M)';
+  const bsd=document.getElementById('btnSound');if(bsd)bsd.textContent='音量 '+('■'.repeat(vol)+'□'.repeat(4-vol))+' (M)';
 }
 function cycleVol(){setVol(vol===0?4:vol-1);}
 function setMute(v){setVol(v?0:4);}
@@ -601,7 +604,7 @@ function pressStart(){
 function setPause(v){
   if(v&&mode!=='play'&&mode!=='intro')return;
   paused=v;
-  document.getElementById('btnPause').textContent=v?'再開 (P)':'一時停止 (P)';
+  const bpz=document.getElementById('btnPause');if(bpz)bpz.textContent=v?'再開 (P)':'一時停止 (P)';
 }
 function say(text,prio){
   if(!P)return;
@@ -2066,7 +2069,7 @@ function draw(){
       ['攻撃','Z / Space(押しっぱなし可)'],
       ['','弓は矢を放つ 薙刀は撫で斬り'],
       ['持ち替え','X / Shift(薙刀を得てから)'],
-      ['再開','P / Esc'],['音量','M (5段階)']
+      ['再開','P / Esc'],['音量','■'.repeat(vol)+'□'.repeat(4-vol)+'  ←→ / M']
     ];
     rows.forEach((rw,i)=>{text(rw[0],24,64+i*12,8,GOLD);text(rw[1],80,64+i*12,8,PAPER);});
     text('いまの装備',128,144,8,GOLD,'center');
@@ -2081,7 +2084,7 @@ function draw(){
     if(L&&L.S.kind==='defense')text('敵を下へ通すな 町民を斬るな',128,178,8,PAPER,'center');
     else if(L&&L.S.kind==='bonus')text('時間内に米俵を拾えるだけ拾え',128,178,8,PAPER,'center');
     else text('米俵を集めて 本陣の旗へ',128,178,8,PAPER,'center');
-    text('P で再開',128,204,8,GOLD,'center');
+    text((window.matchMedia&&matchMedia('(pointer:coarse)').matches)?'左半分を左右になぞると音量  II で再開':'P で再開',128,204,8,GOLD,'center');
     g.restore();
   }
 }
