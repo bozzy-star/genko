@@ -124,12 +124,6 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
       <button class="btn" id="btnPause" type="button">一時停止 (P)</button>
       <button class="btn" id="btnSound" type="button" aria-label="音量">音量 ■■■■ (M)</button>
       <button class="btn" id="btnFull" type="button">全画面 (F)</button>
-      <label class="btn" for="selDiff">難易度
-        <select id="selDiff" aria-label="難易度">
-          <option value="0">baby(ライフ5)</option><option value="1">easy(ライフ4)</option><option value="2" selected>normal(ライフ3)</option>
-          <option value="3">hard(ライフ2)</option><option value="4">expert(ライフ1)</option>
-        </select>
-      </label>
       <label class="btn" for="selView">画面
         <select id="selView" aria-label="画面の広さ">
           <option value="0">PC 32×30マス</option><option value="1">スマホ 16×15マス(大きいドット)</option>
@@ -169,7 +163,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <dt>薙刀</dt><dd>徒歩では右から前、左から前へ二度撫で斬る。騎馬では片側だけ(一振りごとに左右が替わる)。盾も矢も払える</dd>
         <dt>その他</dt><dd>P 一時停止(操作説明が出る) / M 音量(5段階、押すごとに下がり、0の次は最大) / F 全画面</dd>
         <dt>スマホ</dt><dd>画面右上の「全画面」を押して横向きにする。左半分をなぞって移動(仮想スティック)、右下の「射」で攻撃、「替」で持ち替え(「射」を押したまま上へなぞっても持ち替わる)、右上の「II」で一時停止</dd>
-        <dt>難易度</dt><dd>baby / easy / normal / hard / expert。normal がこれまでの調整。ライフ(♥、画面右上)は baby 5 / easy 4 / normal 3 / hard 2 / expert 1 で、尽きると御家人を一人失う。御家人は3人(左上の兜の印)。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
+        <dt>難易度</dt><dd>タイトル画面で←→(スマホは左半分を左右になぞる)で選ぶ。baby / easy / normal / hard / expert。normal がこれまでの調整。ライフ(♥、画面右上)は baby 5 / easy 4 / normal 3 / hard 2 / expert 1 で、尽きると御家人を一人失う。御家人は3人(左上の兜の印)。敵の速さ・出現・射撃の間隔、大将の体力、防衛戦の「守り」の数、夜討ちで見つかる距離が変わり、得点に倍率(×0.5〜×1.5)がかかる</dd>
         <dt>画面</dt><dd>PCは32×30マス、スマホは16×15マス(ドットが大きい)。タッチ端末では自動で切替。「画面」の選択で変えられ、遊んでいる途中なら次の面から</dd>
       </dl>
     </section>
@@ -310,7 +304,7 @@ cv.addEventListener('pointerdown',()=>{cv.focus();initAudio();pressStart();});
     try{zone.setPointerCapture(id);}catch(err){}
     const rc=zone.getBoundingClientRect();ox=e.clientX-rc.left;oy=e.clientY-rc.top;
     stick.style.left=ox+'px';stick.style.top=oy+'px';stick.classList.add('on');
-    setDir(0,0);initAudio();pressStart();e.preventDefault();
+    setDir(0,0);initAudio();if(mode!=='title')pressStart();e.preventDefault();
   });
   zone.addEventListener('pointermove',e=>{
     if(e.pointerId!==id)return;lastT=performance.now();
@@ -556,7 +550,7 @@ function buildStage(n){
 }
 
 /* ---------- state ---------- */
-let mode='title',mt=0,paused=false,tick=0,pf=0;
+let mode='title',mt=0,paused=false,tick=0,pf=0,ptl=0,ptr=0;
 let G={score:0,lives:3,stage:0,next:5000,heads:0,naginata:false},L=null,P=null;
 let hi=0;try{hi=+localStorage.getItem('genko-hi')||0;}catch(e){}
 const FLAG_Y=56;
@@ -571,8 +565,8 @@ function newGame(){
   G={score:0,lives:D().lives,stage:startAt,next:5000,heads:0,naginata:startAt>=4};
   startStage();
 }
-const selDiff=document.getElementById('selDiff');
-if(selDiff){selDiff.value=String(diff);selDiff.addEventListener('change',()=>{diff=+selDiff.value||0;try{localStorage.setItem('genko-diff',String(diff));}catch(e){}if(L&&mode!=='title')toast('難易度は次のゲームから');cv.focus();});}
+/* 難易度はタイトル画面で左右キー(スマホは左半分を左右になぞる)で選ぶ */
+function setDiff(d){diff=Math.max(0,Math.min(DIFFS.length-1,d));try{localStorage.setItem('genko-diff',String(diff));}catch(e){}sfx.horse();}
 const selView=document.getElementById('selView');
 if(selView)selView.addEventListener('change',()=>{
   const nar=selView.value==='1';
@@ -1237,7 +1231,12 @@ function update(){
   tick++;mt++;
   const fe=inp.fire&&!pf;pf=inp.fire;
   if(fe&&(mode==='title'||mode==='over'||mode==='ending'))pressStart();
-  if(mode==='title'||mode==='ending'){if(mode==='ending'&&mt===1)sfx.wind();return;}
+  if(mode==='title'){
+    const l=inp.left&&!ptl,rr=inp.right&&!ptr;ptl=inp.left;ptr=inp.right;
+    if(l)setDiff(diff-1);if(rr)setDiff(diff+1);
+    return;
+  }
+  if(mode==='ending'){if(mt===1)sfx.wind();return;}
   if(mode==='over')return;
   if(mode==='intro'){camera();if(mt>110){mode='play';mt=0;}return;}
   if(mode==='play'){
@@ -1507,10 +1506,16 @@ function drawTitle(){
   drawActor('player',128,218,'u',0);
   otext('元寇',128,6,48,PAPER,K,'center');
   otext('文永・弘安の役',128,62,16,PAPER,K,'center');
-  if((t>>5)&1)otext('いざ、出陣',128,142,16,GOLD,K,'center');
-  otext('Enter / クリック / 射ボタン',128,164,8,PAPER,K,'center');
-  otext('1〜6キー: その面から始める',128,178,8,PAPER,K,'center');
-  otext('難易度 '+D().name+'  ライフ'+'♥'.repeat(D().life)+(diff!==2?'  得点×'+D().mult:''),128,190,8,diff>=3?RED:diff<=1?'#9ad0a0':GOLD,K,'center');
+  if((t>>5)&1)otext('いざ、出陣',128,138,16,GOLD,K,'center');
+  /* 難易度選択: ◀ ▶ で5段階 */
+  const dc=diff>=3?'#ff9a7a':diff<=1?'#9ad0a0':GOLD;
+  otext('難易度',128,160,8,PAPER,K,'center');
+  otext('◀',70,172,8,diff>0?PAPER:'#6a6a6a',K,'center');otext('▶',186,172,8,diff<DIFFS.length-1?PAPER:'#6a6a6a',K,'center');
+  otext(D().name,128,172,8,dc,K,'center');
+  otext('ライフ'+'♥'.repeat(D().life)+(diff!==2?'  得点×'+D().mult:''),128,184,8,dc,K,'center');
+  for(let i=0;i<DIFFS.length;i++)R(108+i*9,196,6,2,i===diff?GOLD:'#6a6a6a');
+  const touchUi=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+  otext(touchUi?'左右になぞって選び 射で出陣':'←→で選び Enter / クリックで出陣',128,206,8,PAPER,K,'center');
   text('HI '+String(hi).padStart(6,'0'),250,228,8,K,'right');
 }
 const hh=(a,b)=>hash(a,b)>>>0;
