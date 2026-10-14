@@ -1,0 +1,2 @@
+# itch.io 用の zip は itch/index.html から作る生成物
+*.zip
