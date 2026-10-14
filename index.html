@@ -179,7 +179,7 @@ label.btn select{font:inherit;font-size:14px;color:var(--paper);background:var(-
         <div class="foe"><canvas width="64" height="64" data-spr="song"></canvas><div><b>宋兵</b><span>旧南宋の兵(新附軍)。鍬を担いで群れでのろのろ来るが、こちらが向き合うと白旗をあげて降参することがある。降参した者に触れると捕虜(+200)。斬ると減点で首級にもならない。『元史』日本伝には、嵐のあと日本側は蒙古・高麗・漢人を斬り、唐人(旧南宋兵)は殺さず奴としたとある。江南軍が農具を積んでいたとも伝わる。</span></div></div>
         <div class="foe"><canvas width="64" height="64" data-spr="folk"></canvas><div><b>町民(第四面)</b><span>博多の町の人。敵から逃げまどう。敵に斬られると守りが減り、自分で斬ってしまうと守りも得点も首級も減る。</span></div></div>
         <div class="foe"><canvas width="64" height="64" data-spr="marco"></canvas><div><b>マルコ・ポーロ(第二面の大将)</b><span>必殺「東方見聞録」は、黄金の国ジパングの金貨を渦巻き状にばらまきます。体力が減ると腕が増えます。</span></div></div>
-        <div class="foe"><canvas width="64" height="64" data-spr="kublai"></canvas><div><b>フビライ・ハーン(第六面の大将)</b><span>必殺「集団戦法」は、元の大軍が画面を横切って押し寄せ、そのあとてつはうが陣地のほとんどを爆撃します。白い枠の安全な区画で耐えます。矢の輪と援軍も使います。</span></div></div>
+        <div class="foe"><canvas width="64" height="64" data-spr="kublai"></canvas><div><b>フビライ・ハーン(第六面の大将)</b><span>必殺「集団戦法」は、元の大軍が画面を横切って押し寄せ、そのあとてつはうが陣地のほとんどを爆撃します。白い枠の安全な区画で耐えます。矢の輪と援軍も使います。青い光の障壁「大元ウルス」をまとい、五十発当てるまで体力は減りません。体力が三割を切ると、ときどき「テムジン!」と叫んで全回復し、障壁も復活します(二回まで)。</span></div></div>
       </div>
     </section>
     <section>
@@ -426,6 +426,11 @@ const voice={
     vhiss(.04,0,.4,2500);vseg('o',210,230,.09,.02,.8);
     vhiss(.04,.13,.4,2500);vseg('o',230,250,.09,.15,.8);
     vhiss(.05,.26,.5,3200);vseg('a',270,290,.14,.3,.9);vseg('a',290,200,.3,.44,.9);},
+  temujin(){if(!AC||muted)return;
+    vhiss(.04,0,.4,3000);vseg('e',120,135,.1,.02,.9);
+    vseg('u',135,140,.1,.14,.85);
+    vhiss(.04,.26,.5,2500);vseg('i',150,165,.1,.28,.9);
+    vseg('n',170,170,.1,.4,.8);vseg('n',175,110,.3,.5,.9);},
   issho(){if(!AC||muted)return;
     vseg('i',120,130,.08,0,.8);
     vhiss(.09,.2,.5,3500);vseg('o',138,142,.1,.22,.9);
@@ -505,7 +510,8 @@ function wpick(mix,rn){let s=0;for(const k in mix)s+=mix[k];let r=rn()*s;for(con
 function mkEnemy(t,x,y,asleep){return{t,x,y,asleep,face:'d',f:0,anim:0,cd:50+Math.random()*80,slide:0,sx:0,sy:0,st:0,tt:0,ux:0,uy:0,fx:0,fy:1,sur:false,wx:0,shield:t==='koryo'?20:0,alert:0,sayT:0,pa:Math.random()*6.283,pt:0};}
 function mkFolk(x,y){return{x,y,f:0,anim:0,face:'d',vx:0,vy:0,tt:30+Math.random()*60,panic:0,slide:0,sx:0,sy:0,dead:false};}
 
-function mkBoss(k){const m=Math.round((k==='marco'?14:24)*D().hp);return{k,x:W/2,y:84,hp:m,max:m,asleep:true,face:'d',f:0,anim:0,st:0,tt:0,cd:150,inv:0,tr:0,flash:0,atk:'',ang:0,slide:0,sx:0,sy:0,dead:false,n:0,aim:60,sum:300,lanes:null};}
+/* フビライ: 「大元ウルス」の障壁(50発で崩壊)と、体力三割以下で確率発動の「テムジン!」(全回復+障壁復活、二回まで) */
+function mkBoss(k){const m=Math.round((k==='marco'?14:24)*D().hp);return{k,x:W/2,y:84,barrier:k==='kublai'?50:0,tem:0,sayT:0,hp:m,max:m,asleep:true,face:'d',f:0,anim:0,st:0,tt:0,cd:150,inv:0,tr:0,flash:0,atk:'',ang:0,slide:0,sx:0,sy:0,dead:false,n:0,aim:60,sum:300,lanes:null};}
 function buildStage(n){
   const S=STAGES[n],len=S.kind==='defense'?H:Math.round(S.len*(WIDE()?1:.6)/T)*T,rows=len/T,rnd=mulberry(1274+n*131);
   const nE=WIDE()?S.enemies:Math.ceil(S.enemies*.6);
@@ -1108,9 +1114,23 @@ function flagCheck(){
 function damageBoss(n){
   const b=L.boss;
   if(!b||b.dead||b.asleep)return;
+  if(b.inv>0)return;
+  if(b.barrier>0){
+    b.barrier-=n;b.flash=3;sfx.bump();
+    burst(b.x+(Math.random()-.5)*30,b.y-2+(Math.random()-.5)*30,['#7fb8ff',PAPER],3,1.2);
+    if(b.barrier<=0){b.barrier=0;L.banner={text:'大元ウルス 崩壊!',t:90};sfx.boom();L.shake=12;burst(b.x,b.y-2,['#7fb8ff',PAPER,GOLD],30,2.6);}
+    return;
+  }
   b.hp-=n;b.flash=6;sfx.kill();
   burst(b.x,b.y-2,[b.k==='marco'?'#b0252f':'#d8a82a',PAPER],4,1.4);
   if(b.hp<=0)bossDown();
+}
+function temujin(b){
+  b.tem++;b.hp=b.max;b.barrier=50;b.inv=70;b.sayT=80;
+  L.banner={text:'テムジン!',t:110};voice.temujin();sfx.wind();L.shake=18;
+  burst(b.x,b.y-2,['#7fb8ff',GOLD,PAPER,RED],40,3);
+  L.fx.push({x:b.x,y:b.y,t:0});
+  toast(b.tem<2?'大汗の叫び! 全回復と大元ウルスの復活':'大汗 最後の叫び!');
 }
 function bossDown(){
   const b=L.boss;
@@ -1169,6 +1189,8 @@ function updBoss(){
   if(b.inv>0)b.inv--;
   if(b.tr>0)b.tr--;
   if(b.flash>0)b.flash--;
+  if(b.sayT>0)b.sayT--;
+  if(b.k==='kublai'&&b.tem<2&&b.st===0&&b.hp<b.max*.3&&b.hp>0&&Math.random()<.015)temujin(b);
   b.anim+=.08;b.f=(b.anim|0)&1;
   const dx=P.x-b.x,dy=P.y-b.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
   const marco=b.k==='marco',rage=b.hp<=b.max/2,vis=b.y>L.cam&&b.y<L.cam+H;
@@ -1781,6 +1803,12 @@ function drawBossSprite(k,x,y,face,f,flash,mult){
 }
 function drawBoss(b,sy,sea){
   const x=Math.round(b.x);
+  if(b.barrier>0){
+    const rr=24+Math.sin(tick/7)*1.5,al=.35+.25*Math.sin(tick/5)+.3*(b.flash>0?1:0);
+    g.strokeStyle='rgba(127,184,255,'+al+')';g.lineWidth=2;g.beginPath();g.arc(x,Math.round(sy)-2,rr,0,6.283);g.stroke();
+    g.strokeStyle='rgba(239,228,204,'+(al*.6)+')';g.lineWidth=1;g.beginPath();g.arc(x,Math.round(sy)-2,rr-4,tick/20,tick/20+4.2);g.stroke();
+    for(let i=0;i<6;i++){const a=tick/30+i*1.047;R(Math.round(x+Math.cos(a)*rr)-1,Math.round(sy-2+Math.sin(a)*rr)-1,2,2,'#bfe0ff');}
+  }
   if(sea){g.save();g.translate(x,Math.round(sy)+14);g.scale(1.8,1.8);ship(0,0);g.restore();}
   drawBossSprite(b.k,x,sy,b.face,b.f,b.flash>0||(b.st===1&&((b.tt>>2)&1)));
   if(b.st===1&&((b.tt>>3)&1))text('!',x-2,sy-(b.k==='kublai'?42:36),8,RED);
@@ -1948,12 +1976,13 @@ function drawWorld(){
       g.beginPath();g.moveTo(Math.round(x),Math.round(y));g.lineTo(Math.round(x-gx*len),Math.round(y-gy*len));g.stroke();
     }
   }
-  for(const e of L.enemies){
+  const talkers=L.enemies.slice();if(L.boss&&!L.boss.dead)talkers.push(L.boss);
+  for(const e of talkers){
     if(e.dead||e.asleep||e.sayT<=0)continue;
     const sy=e.y-L.cam;if(sy<-20||sy>H+20)continue;
-    const tx='ここじゃー',w=[...tx].length*8+8,h=12;
+    const tx=e===L.boss?'テムジン!':'ここじゃー',w=[...tx].length*8+8,h=12;
     const bx=Math.max(2,Math.min(W-w-2,Math.round(e.x-w/2))),by=Math.max(24,Math.round(sy-28));
-    R(bx,by,w,h,K);R(bx+1,by+1,w-2,h-2,'#ffd9c0');
+    R(bx,by,w,h,K);R(bx+1,by+1,w-2,h-2,e===L.boss?GOLD:'#ffd9c0');
     text(tx,bx+w/2,by+2,8,K,'center');
     R(Math.round(e.x)-1,by+h,3,2,K);
   }
@@ -2013,8 +2042,9 @@ function drawHud(){
   }
   const bb=L.boss;
   if(bb&&!bb.asleep&&!bb.dead){
-    text(bb.k==='marco'?'マルコ・ポーロ':'フビライ・ハーン',8,H-22,8,PAPER);
+    text(bb.k==='marco'?'マルコ・ポーロ':'フビライ・ハーン'+(bb.tem?'  テムジン×'+bb.tem:''),8,H-22,8,PAPER);
     R(8,H-12,W-16,7,K);R(9,H-11,Math.max(0,Math.round((W-18)*bb.hp/bb.max)),5,RED);
+    if(bb.barrier>0){text('大元ウルス '+bb.barrier,W-8,H-22,8,'#bfe0ff','right');R(8,H-15,W-16,3,K);R(9,H-14,Math.round((W-18)*bb.barrier/50),1,'#7fb8ff');}
   }
   if(L.banner&&mode==='play'){
     const bt=L.banner.text,on=(L.banner.t>>2)&1;
